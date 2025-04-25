@@ -33,7 +33,7 @@ pengaruh, dan peran berbagai aktor dalam diskusi publik tentang program stunting
 def load_data():
     try:
         # Coba membaca dari path relatif terlebih dahulu
-        df = pd.read_csv("data/db_merge_with_sentiment_21feb_drop.csv")
+        df = pd.read_csv("data/db_merge_with_sentiment_24apr_drop.csv")
     except FileNotFoundError:
         # Jika tidak ditemukan, tampilkan pesan error
         st.error("File data tidak ditemukan. Mohon cek lokasi file data.")
