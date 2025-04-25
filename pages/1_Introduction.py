@@ -43,7 +43,7 @@ with tab1:
         """)
     
     with col2:
-        st.image("https://via.placeholder.com/400x300?text=Ilustrasi+Stunting", caption="Ilustrasi Program Stunting di Indonesia", use_column_width=True)
+        st.image("https://via.placeholder.com/400x300?text=Ilustrasi+Stunting", caption="Ilustrasi Program Stunting di Indonesia", use_container_width=True)
     
     st.markdown("---")
     

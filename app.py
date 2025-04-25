@@ -30,7 +30,7 @@ Gunakan sidebar untuk navigasi ke halaman yang berbeda.
 
 # Tambahkan gambar dashboard di halaman utama
 st.image("https://via.placeholder.com/800x400?text=Visualisasi+Data+Stunting", 
-         caption="Visualisasi Data Analisis Sentimen Program Stunting", use_column_width=True)
+         caption="Visualisasi Data Analisis Sentimen Program Stunting", use_container_width=True)
 
 # Menambahkan informasi footer
 st.markdown("---")
