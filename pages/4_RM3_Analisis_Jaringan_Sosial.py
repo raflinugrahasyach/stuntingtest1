@@ -147,7 +147,7 @@ def plot_network(G, centrality_metric, metric_name, color_palette, top_n=100):
     # Compute layout with adjusted parameters for eigenvector centrality
     if metric_name == "Eigenvector":
         # Use a different layout algorithm with more space between nodes
-        pos = nx.spring_layout(G_sub, k=0.3, iterations=100, seed=42)  # Increase k for more spacing
+        pos = nx.spring_layout(G_sub, k=0.5, iterations=300, seed=42)  # Increase k for more spacing
     else:
         pos = nx.spring_layout(G_sub, k=0.15, iterations=50, seed=42)
     
