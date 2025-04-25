@@ -95,20 +95,27 @@ def build_network(df):
     
     return G
 
-# Fungsi untuk menghitung centrality metrics
+# Fungsi untuk menghitung centrality metrics dengan penanganan error yang lebih baik
 def calculate_centrality(G):
     # Menghitung berbagai centrality metrics
     degree_centrality = nx.degree_centrality(G)
     betweenness_centrality = nx.betweenness_centrality(G, k=100, normalized=True)
     closeness_centrality = nx.closeness_centrality(G)
     
-    # Untuk eigenvector centrality, convert ke undirected graph
+    # Untuk eigenvector centrality dengan penanganan error yang lebih baik
     G_und = G.to_undirected()
+    
+    # Gunakan power_iteration_eigenvector_centrality yang lebih tahan error
     try:
-        eigenvector_centrality = nx.eigenvector_centrality(G_und, max_iter=300, tol=1e-04)
+        eigenvector_centrality = nx.eigenvector_centrality_numpy(G_und)
     except:
-        # Fallback jika tidak konvergen
-        eigenvector_centrality = {node: 0.01 for node in G_und.nodes()}
+        try:
+            # Fallback ke metode standar dengan iterasi yang lebih banyak
+            eigenvector_centrality = nx.eigenvector_centrality(G_und, max_iter=1000, tol=1e-03)
+        except:
+            # Jika masih gagal, gunakan pendekatan PageRank sebagai pengganti
+            st.warning("Eigenvector centrality calculation failed, using PageRank as an approximation.")
+            eigenvector_centrality = nx.pagerank(G_und, alpha=0.85)
     
     return {
         "degree": degree_centrality,
@@ -117,7 +124,7 @@ def calculate_centrality(G):
         "eigenvector": eigenvector_centrality
     }
 
-# Fungsi untuk membuat visualisasi jaringan yang lebih rapi
+# Fungsi untuk membuat visualisasi jaringan yang lebih rapi dengan panah yang lebih jelas
 def plot_network(G, centrality_metric, metric_name, color_palette, top_n=100):
     # Pilih top N nodes berdasarkan centrality metric
     top_nodes = sorted(centrality_metric, key=centrality_metric.get, reverse=True)[:top_n]
@@ -143,12 +150,15 @@ def plot_network(G, centrality_metric, metric_name, color_palette, top_n=100):
     # Plot dengan tampilan yang lebih bersih
     plt.figure(figsize=(10, 8), facecolor='white')
     
-    # Draw edges dengan transparansi tinggi dan warna light gray
+    # Draw edges dengan panah yang lebih jelas
     nx.draw_networkx_edges(
         G_sub, pos,
-        alpha=0.15, 
-        width=0.6,
-        edge_color='#CCCCCC'
+        alpha=0.3,  # Tingkatkan opacity
+        width=1.2,  # Panah lebih tebal
+        edge_color='#666666',  # Warna panah lebih gelap
+        arrowsize=15,  # Ukuran panah lebih besar
+        arrowstyle='-|>',  # Gaya panah yang lebih jelas
+        connectionstyle='arc3,rad=0.1'  # Panah melengkung untuk menghindari tumpang tindih
     )
     
     # Node sizes dan colors berdasarkan centrality
@@ -220,7 +230,9 @@ if not db_merge.empty:
     G = build_network(db_merge)
     
     # Menghitung centrality metrics
-    centrality_metrics = calculate_centrality(G)
+    # Gunakan status spinner untuk menunjukkan proses
+    with st.spinner('Menghitung metrics jaringan...'):
+        centrality_metrics = calculate_centrality(G)
     
     with tab1:
         st.markdown("<div class='sub-header'>Overview Jaringan Sosial</div>", unsafe_allow_html=True)
