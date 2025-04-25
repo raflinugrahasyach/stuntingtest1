@@ -58,8 +58,7 @@ def build_network(df):
     
     return G
 
-# Fungsi untuk menghitung centrality metrics
-@st.cache_data
+# Fungsi untuk menghitung centrality metrics tanpa caching
 def calculate_centrality(G):
     # Menghitung berbagai centrality metrics
     degree_centrality = nx.degree_centrality(G)
@@ -152,7 +151,7 @@ if not db_merge.empty:
     # Membangun jaringan
     G = build_network(db_merge)
     
-    # Menghitung centrality metrics
+    # Menghitung centrality metrics tanpa caching
     centrality_metrics = calculate_centrality(G)
     
     with tab1:
