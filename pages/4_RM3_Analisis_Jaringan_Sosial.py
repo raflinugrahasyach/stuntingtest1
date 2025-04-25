@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 import plotly.express as px
 import numpy as np
+import io
 from PIL import Image
 import os
 
@@ -102,21 +103,30 @@ def build_network(df):
     # Extract username dan in_reply_to_screen_name untuk membuat jaringan
     db_sna = df[["username", "in_reply_to_screen_name"]]
     
+    # Jika data terlalu besar, lakukan sampling
+    if len(db_sna) > 5000:
+        db_sna = db_sna.sample(5000, random_state=42)
+    
     # Membuat directed graph
     G = nx.DiGraph()
     
-    # Menambahkan edge ke graf berdasarkan data
+    # Menambahkan edge ke graf berdasarkan data dengan batasan
     edge_count = 0
     for index, row in db_sna.iterrows():
         if pd.notna(row["username"]) and pd.notna(row["in_reply_to_screen_name"]):
             G.add_edge(row["username"], row["in_reply_to_screen_name"])
             edge_count += 1
-            # Limit edges to improve performance
-            if edge_count >= 2000:  # Cap at 2000 edges
+            # Batasi jumlah edge untuk performa
+            if edge_count >= 1000:  # Batas 1000 edge
                 break
     
     # Menghapus self-loops
     G.remove_edges_from(nx.selfloop_edges(G))
+    
+    # Jika masih terlalu besar, hanya ambil giant component
+    if G.number_of_nodes() > 500:
+        largest_cc = max(nx.weakly_connected_components(G), key=len)
+        G = G.subgraph(largest_cc).copy()
     
     return G
 
@@ -139,119 +149,68 @@ def calculate_centrality(G):
     }
 
 # Fungsi untuk membuat visualisasi jaringan interaktif dengan Plotly
-def plot_lightweight_network(G, centrality_metric, metric_name, color_scale="Blues", top_n=50):
+def plot_simple_network(G, centrality_metric, metric_name, colormap="Blues", top_n=50):
     """
-    Creates a more lightweight network visualization by:
-    - Limiting the number of nodes displayed
-    - Using simpler visual elements
-    - Pre-computing layout
+    Membuat visualisasi jaringan yang ringan menggunakan matplotlib
     """
-    # Select only top N nodes based on centrality metric to reduce complexity
+    # Pilih hanya top N nodes untuk mengurangi kompleksitas
     top_nodes = sorted(centrality_metric, key=centrality_metric.get, reverse=True)[:top_n]
     
-    # Create subgraph with only top nodes
+    # Buat subgraph dengan top nodes
     G_sub = G.subgraph(top_nodes).copy()
     
-    # Use a faster layout algorithm with fewer iterations
-    pos = nx.spring_layout(G_sub, k=0.8, iterations=50, seed=42)
+    # Buat figure matplotlib
+    plt.figure(figsize=(10, 7))
     
-    # Prepare data for Plotly with simplified styling
-    edge_x = []
-    edge_y = []
-    for edge in G_sub.edges():
-        x0, y0 = pos[edge[0]]
-        x1, y1 = pos[edge[1]]
-        edge_x.extend([x0, x1, None])
-        edge_y.extend([y0, y1, None])
+    # Gunakan layout yang lebih sederhana dengan iterasi terbatas
+    pos = nx.spring_layout(G_sub, k=0.3, iterations=20, seed=42)
     
-    # Create edge trace with minimal styling
-    edge_trace = go.Scatter(
-        x=edge_x, y=edge_y,
-        line=dict(width=0.6, color='#bbb'),  # Thinner, lighter lines
-        hoverinfo='none',
-        mode='lines')
+    # Persiapkan ukuran node (diskalakan berdasarkan centrality)
+    node_sizes = [centrality_metric[node] * 5000 + 50 for node in G_sub.nodes()]
     
-    # Prepare node data
-    node_x = []
-    node_y = []
-    node_text = []
-    node_size = []
-    node_color = []
+    # Siapkan warna node berdasarkan nilai centrality
+    node_colors = [centrality_metric[node] for node in G_sub.nodes()]
     
-    # Only create detailed hover data for top 20% of nodes to reduce rendering load
-    percentile_90 = np.percentile([centrality_metric[n] for n in G_sub.nodes()], 90)
+    # Gambar edges dengan warna transparan untuk mengurangi visual clutter
+    nx.draw_networkx_edges(G_sub, pos, alpha=0.2, width=0.5, edge_color='grey')
     
-    for node in G_sub.nodes():
-        x, y = pos[node]
-        node_x.append(x)
-        node_y.append(y)
-        
-        # Simplified hover text
-        if centrality_metric[node] > percentile_90:
-            node_text.append(f"{node}<br>{metric_name}: {centrality_metric[node]:.4f}")
-        else:
-            node_text.append(node)
-            
-        # Scale node sizes within a smaller range to avoid large nodes
-        node_size.append(5 + (centrality_metric[node] * 50))  # Limited size range
-        node_color.append(centrality_metric[node])
-    
-    # Only show labels for top 10% of nodes
-    node_text_display = ["" for _ in G_sub.nodes()]
-    top_10_percent = sorted(range(len(node_color)), key=lambda i: node_color[i], reverse=True)[:int(len(node_color)*0.1)]
-    
-    for idx in top_10_percent:
-        node_name = list(G_sub.nodes())[idx]
-        node_text_display[idx] = node_name
-    
-    # Create node trace with simplified styling
-    node_trace = go.Scatter(
-        x=node_x, y=node_y,
-        mode='markers+text',
-        text=node_text_display,
-        textposition="top center",
-        textfont=dict(size=10),  # Smaller text
-        hovertext=node_text,
-        hoverinfo='text',
-        marker=dict(
-            showscale=True,
-            colorscale=color_scale,
-            color=node_color,
-            size=node_size,
-            sizemode='diameter',
-            sizeref=2*max(node_size)/(20**2) if node_size else 1,  # Smaller reference size
-            line=dict(width=0.5, color='#888'),  # Thinner border
-            colorbar=dict(
-                thickness=10,  # Thinner colorbar
-                title=f'{metric_name}',
-                titleside='right',
-                len=0.5,  # Shorter colorbar
-                y=0.5,
-                yanchor='middle'
-            )
-        )
+    # Gambar nodes
+    nodes = nx.draw_networkx_nodes(
+        G_sub, 
+        pos, 
+        node_size=node_sizes,
+        node_color=node_colors, 
+        cmap=plt.cm.get_cmap(colormap),
+        alpha=0.8,
+        linewidths=0.5,
+        edgecolors='white'
     )
     
-    # Create figure with simplified layout
-    fig = go.Figure(data=[edge_trace, node_trace],
-                layout=go.Layout(
-                    title=f'{metric_name} Centrality (Top {top_n})',
-                    titlefont=dict(size=16),
-                    showlegend=False,
-                    hovermode='closest',
-                    margin=dict(b=10, l=5, r=5, t=40),
-                    xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
-                    yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
-                    plot_bgcolor='rgba(255,255,255,0.95)',
-                    paper_bgcolor='rgba(255,255,255,0.95)',
-                    height=450,  # Reduced height
-                    autosize=True
-                ))
+    # Tambahkan colorbar
+    plt.colorbar(nodes, label=f'{metric_name} Centrality', shrink=0.7)
     
-    # Disable some features to improve performance
-    fig.update_layout(dragmode=False)  # Disable drag mode
+    # Tampilkan label hanya untuk top 10% node
+    top_n_labels = int(len(G_sub.nodes()) * 0.1) + 1  # Minimal 1 label
+    top_label_nodes = {node: node for i, node in 
+                        enumerate(sorted(centrality_metric, key=centrality_metric.get, reverse=True)[:top_n_labels]) 
+                        if node in G_sub.nodes()}
     
-    return fig
+    # Tampilkan labels dengan posisi yang sedikit digeser untuk keterbacaan lebih baik
+    label_pos = {node: (pos[node][0], pos[node][1] + 0.02) for node in top_label_nodes}
+    nx.draw_networkx_labels(G_sub, label_pos, labels=top_label_nodes, font_size=9, font_weight='bold')
+    
+    # Hapus axis untuk tampilan bersih
+    plt.axis('off')
+    plt.title(f"Top {top_n} Aktor berdasarkan {metric_name} Centrality", size=13)
+    plt.tight_layout()
+    
+    # Simpan plot ke BytesIO buffer untuk ditampilkan di Streamlit
+    buffer = io.BytesIO()
+    plt.savefig(buffer, format='png', dpi=100, bbox_inches='tight')
+    buffer.seek(0)
+    plt.close()  # Penting untuk menutup plot dan menghemat memori
+    
+    return buffer
 
 
 # Fungsi untuk menampilkan top nodes berdasarkan centrality
@@ -415,11 +374,21 @@ if not db_merge.empty:
         col1, col2 = st.columns([2, 1])
         
         with col1:
-            # Add performance control
+            # Kontrol untuk mengatur jumlah node
             default_nodes = min(50, G.number_of_nodes())
             display_nodes = st.slider("Jumlah node yang ditampilkan:", 10, 100, default_nodes, key="degree_nodes")
-            fig_degree = plot_lightweight_network(G, centrality_metrics["degree"], "Degree", "Blues", display_nodes)
-            st.plotly_chart(fig_degree, use_container_width=True)
+            
+            # Tampilkan visualisasi ringan
+            buffer = plot_simple_network(G, centrality_metrics["degree"], "Degree", "Blues", display_nodes)
+            st.image(buffer, use_column_width=True)
+            
+            # Tambahkan tombol download visualisasi
+            btn = st.download_button(
+                label="Download Visualisasi",
+                data=buffer,
+                file_name=f"degree_centrality_{display_nodes}_nodes.png",
+                mime="image/png"
+            )
         
         with col2:
             st.subheader("Top Aktor berdasarkan Degree Centrality")
@@ -434,9 +403,11 @@ if not db_merge.empty:
             <li>Memiliki banyak interaksi langsung</li>
             <li>Sering menjadi pusat diskusi</li>
             <li>Memiliki pengaruh langsung yang besar</li>
+            <li>Berperan sebagai penyebar informasi utama</li>
             </ul>
             </div>
             """, unsafe_allow_html=True)
+
     
     with tab3:
         st.header("Betweenness Centrality")
@@ -452,9 +423,23 @@ if not db_merge.empty:
         
         with col1:
             display_nodes = st.slider("Jumlah node yang ditampilkan:", 10, 100, default_nodes, key="betweenness_nodes")
-            fig_betweenness = plot_lightweight_network(G, centrality_metrics["betweenness"], "Betweenness", "Oranges", display_nodes)
-            st.plotly_chart(fig_betweenness, use_container_width=True)
+            buffer = plot_simple_network(G, centrality_metrics["betweenness"], "Betweenness", "Oranges", display_nodes)
+            st.image(buffer, use_column_width=True)
+            
+            # Tambahkan tombol download visualisasi
+            btn = st.download_button(
+                label="Download Visualisasi",
+                data=buffer,
+                file_name=f"betweenness_centrality_{display_nodes}_nodes.png",
+                mime="image/png"
+            )
+        
+        with col2:
+            st.subheader("Top Aktor berdasarkan Betweenness Centrality")
+            df_betweenness = display_top_nodes(centrality_metrics["betweenness"], "Betweenness")
+            st.dataframe(df_betweenness.style.background_gradient(cmap="Oranges"), hide_index=True, use_container_width=True)
     
+    # Implementasi untuk tab Closeness Centrality
     with tab4:
         st.header("Closeness Centrality")
         st.markdown("""
@@ -469,8 +454,17 @@ if not db_merge.empty:
         col1, col2 = st.columns([2, 1])
         
         with col1:
-            fig_closeness = plot_lightweight_network(G, centrality_metrics["closeness"], "Closeness", "Greens", top_n)
-            st.plotly_chart(fig_closeness, use_container_width=True)
+            display_nodes = st.slider("Jumlah node yang ditampilkan:", 10, 100, default_nodes, key="closeness_nodes")
+            buffer = plot_simple_network(G, centrality_metrics["closeness"], "Closeness", "Greens", display_nodes)
+            st.image(buffer, use_column_width=True)
+            
+            # Tambahkan tombol download visualisasi
+            btn = st.download_button(
+                label="Download Visualisasi",
+                data=buffer,
+                file_name=f"closeness_centrality_{display_nodes}_nodes.png",
+                mime="image/png"
+            )
         
         with col2:
             st.subheader("Top Aktor berdasarkan Closeness Centrality")
@@ -490,6 +484,7 @@ if not db_merge.empty:
             </div>
             """, unsafe_allow_html=True)
     
+    # Implementasi untuk tab Eigenvector Centrality
     with tab5:
         st.header("Eigenvector Centrality")
         st.markdown("""
@@ -503,8 +498,17 @@ if not db_merge.empty:
         col1, col2 = st.columns([2, 1])
         
         with col1:
-            fig_eigenvector = plot_lightweight_network(G, centrality_metrics["eigenvector"], "Eigenvector", "Purples", top_n)
-            st.plotly_chart(fig_eigenvector, use_container_width=True)
+            display_nodes = st.slider("Jumlah node yang ditampilkan:", 10, 100, default_nodes, key="eigenvector_nodes")
+            buffer = plot_simple_network(G, centrality_metrics["eigenvector"], "Eigenvector", "Purples", display_nodes)
+            st.image(buffer, use_column_width=True)
+            
+            # Tambahkan tombol download visualisasi
+            btn = st.download_button(
+                label="Download Visualisasi",
+                data=buffer,
+                file_name=f"eigenvector_centrality_{display_nodes}_nodes.png",
+                mime="image/png"
+            )
         
         with col2:
             st.subheader("Top Aktor berdasarkan Eigenvector Centrality")
