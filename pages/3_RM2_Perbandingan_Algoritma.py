@@ -3,8 +3,6 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
-from PIL import Image
-import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
@@ -32,96 +30,70 @@ Kita membandingkan performa ketiga algoritma dengan menggunakan dua metode anali
 **BERT** dan **VADER Lexicon**.
 """)
 
-# Function to load data
-@st.cache_data
-def load_data():
-    try:
-        # Dalam implementasi sebenarnya, ganti dengan path file CSV Anda
-        df = pd.read_csv("data/db_merge_with_sentiment_24apr.csv")
-        return df
-    except FileNotFoundError:
-        # Data dummy untuk demonstrasi jika file tidak ditemukan
-        st.warning("File data tidak ditemukan. Menampilkan data contoh untuk demonstrasi.")
-        
-        # Membuat data dummy untuk demonstrasi
-        models = ['GBDT', 'SVC', 'XGBoost']
-        
-        bert_accuracies = [0.85231, 0.82184, 0.86755]
-        vader_accuracies = [0.77321, 0.74512, 0.79845]
-        
-        bert_precisions = [0.84125, 0.81324, 0.85791]
-        vader_precisions = [0.76421, 0.73625, 0.78942]
-        
-        bert_recalls = [0.83954, 0.80214, 0.85124]
-        vader_recalls = [0.75841, 0.72941, 0.78541]
-        
-        bert_f1_scores = [0.84039, 0.80765, 0.85456]
-        vader_f1_scores = [0.76128, 0.73278, 0.78740]
-        
-        # Confusion matrices (dummy data)
-        conf_matrices = {
-            'GBDT_BERT': np.array([[150, 20, 10], [15, 200, 25], [5, 30, 145]]),
-            'SVC_BERT': np.array([[140, 25, 15], [20, 190, 30], [10, 35, 135]]),
-            'XGBoost_BERT': np.array([[155, 15, 10], [10, 210, 20], [5, 25, 150]]),
-            'GBDT_VADER': np.array([[130, 30, 20], [25, 180, 35], [15, 40, 125]]),
-            'SVC_VADER': np.array([[125, 35, 20], [30, 170, 40], [20, 45, 115]]),
-            'XGBoost_VADER': np.array([[135, 25, 20], [20, 190, 30], [15, 35, 130]])
-        }
-        
-        return {
-            'models': models,
-            'bert_accuracies': bert_accuracies,
-            'vader_accuracies': vader_accuracies,
-            'bert_precisions': bert_precisions,
-            'vader_precisions': vader_precisions,
-            'bert_recalls': bert_recalls,
-            'vader_recalls': vader_recalls,
-            'bert_f1_scores': bert_f1_scores,
-            'vader_f1_scores': vader_f1_scores,
-            'conf_matrices': conf_matrices
-        }
+# Data dari laporan
+# Menggunakan data riil dari laporan
+models = ['GBDT', 'SVC', 'XGBoost']
 
-# Load the data
-data = load_data()
+# Metrics from the report
+bert_accuracies = [0.7529249827942188, 0.7894012388162422, 0.7660013764624914]
+vader_accuracies = [0.9559532002752925, 0.9201651754989677, 0.9525120440467997]
+
+# BERT metrics
+bert_precisions = {
+    'GBDT': {'0': 0.57, '1': 0.84, '2': 0.83, 'macro': 0.75, 'weighted': 0.78},
+    'SVC': {'0': 0.71, '1': 0.83, '2': 0.67, 'macro': 0.74, 'weighted': 0.77},
+    'XGBoost': {'0': 0.55, '1': 0.83, '2': 0.67, 'macro': 0.68, 'weighted': 0.74}
+}
+
+bert_recalls = {
+    'GBDT': {'0': 0.44, '1': 0.95, '2': 0.27, 'macro': 0.55, 'weighted': 0.75},
+    'SVC': {'0': 0.63, '1': 0.89, '2': 0.30, 'macro': 0.61, 'weighted': 0.75},
+    'XGBoost': {'0': 0.48, '1': 0.93, '2': 0.30, 'macro': 0.57, 'weighted': 0.75}
+}
+
+bert_f1_scores = {
+    'GBDT': {'0': 0.54, '1': 0.84, '2': 0.41, 'macro': 0.60, 'weighted': 0.73},
+    'SVC': {'0': 0.67, '1': 0.86, '2': 0.41, 'macro': 0.65, 'weighted': 0.76},
+    'XGBoost': {'0': 0.51, '1': 0.85, '2': 0.42, 'macro': 0.59, 'weighted': 0.74}
+}
+
+# VADER metrics
+vader_precisions = {
+    'GBDT': {'0': 0.91, '1': 0.95, '2': 0.98, 'macro': 0.95, 'weighted': 0.96},
+    'SVC': {'0': 1.00, '1': 0.92, '2': 0.98, 'macro': 0.97, 'weighted': 0.93},
+    'XGBoost': {'0': 0.91, '1': 0.95, '2': 0.98, 'macro': 0.95, 'weighted': 0.95}
+}
+
+vader_recalls = {
+    'GBDT': {'0': 0.58, '1': 1.00, '2': 0.76, 'macro': 0.78, 'weighted': 0.96},
+    'SVC': {'0': 0.17, '1': 1.00, '2': 0.58, 'macro': 0.58, 'weighted': 0.92},
+    'XGBoost': {'0': 0.58, '1': 1.00, '2': 0.73, 'macro': 0.77, 'weighted': 0.95}
+}
+
+vader_f1_scores = {
+    'GBDT': {'0': 0.71, '1': 0.98, '2': 0.85, 'macro': 0.85, 'weighted': 0.95},
+    'SVC': {'0': 0.30, '1': 0.96, '2': 0.73, 'macro': 0.66, 'weighted': 0.90},
+    'XGBoost': {'0': 0.71, '1': 0.98, '2': 0.83, 'macro': 0.84, 'weighted': 0.95}
+}
+
+# Confusion matrices from the report
+conf_matrices = {
+    'GBDT_BERT': np.array([[71, 73, 18], [13, 871, 28], [42, 99, 44]]),
+    'SVC_BERT': np.array([[102, 48, 12], [34, 816, 62], [8, 125, 52]]),
+    'XGBoost_BERT': np.array([[77, 69, 16], [25, 849, 38], [38, 106, 41]]),
+    'GBDT_VADER': np.array([[30, 22, 0], [0, 1229, 0], [3, 38, 131]]),
+    'SVC_VADER': np.array([[9, 43, 0], [0, 1229, 0], [0, 72, 100]]),
+    'XGBoost_VADER': np.array([[30, 22, 0], [0, 1229, 0], [3, 44, 125]])
+}
+
+# Class support numbers (from the confusion matrices)
+class_support = {
+    'BERT': {'0': 162, '1': 912, '2': 185},
+    'VADER': {'0': 52, '1': 1229, '2': 172}
+}
 
 # Sidebar untuk kontrol
 st.sidebar.header("Konfigurasi Tampilan")
-
-# Jika data adalah dictionary (dummy data), gunakan langsung
-if isinstance(data, dict):
-    models = data['models']
-    bert_accuracies = data['bert_accuracies']
-    vader_accuracies = data['vader_accuracies']
-    bert_precisions = data['bert_precisions']
-    vader_precisions = data['vader_precisions']
-    bert_recalls = data['bert_recalls']
-    vader_recalls = data['vader_recalls']
-    bert_f1_scores = data['bert_f1_scores']
-    vader_f1_scores = data['vader_f1_scores']
-    conf_matrices = data['conf_matrices']
-else:
-    # Menyiapkan data jika menggunakan file CSV yang sebenarnya
-    # Kode untuk mengekstrak data dari DataFrame asli akan diimplementasikan di sini
-    # Ini akan mengikuti logika yang mirip dengan kode di notebook Jupyter yang disediakan
-    st.warning("Data processing from actual CSV not implemented in this demo")
-    # Gunakan data dummy sebagai fallback
-    models = ['GBDT', 'SVC', 'XGBoost']
-    bert_accuracies = [0.85231, 0.82184, 0.86755]
-    vader_accuracies = [0.77321, 0.74512, 0.79845]
-    bert_precisions = [0.84125, 0.81324, 0.85791]
-    vader_precisions = [0.76421, 0.73625, 0.78942]
-    bert_recalls = [0.83954, 0.80214, 0.85124]
-    vader_recalls = [0.75841, 0.72941, 0.78541]
-    bert_f1_scores = [0.84039, 0.80765, 0.85456]
-    vader_f1_scores = [0.76128, 0.73278, 0.78740]
-    conf_matrices = {
-        'GBDT_BERT': np.array([[150, 20, 10], [15, 200, 25], [5, 30, 145]]),
-        'SVC_BERT': np.array([[140, 25, 15], [20, 190, 30], [10, 35, 135]]),
-        'XGBoost_BERT': np.array([[155, 15, 10], [10, 210, 20], [5, 25, 150]]),
-        'GBDT_VADER': np.array([[130, 30, 20], [25, 180, 35], [15, 40, 125]]),
-        'SVC_VADER': np.array([[125, 35, 20], [30, 170, 40], [20, 45, 115]]),
-        'XGBoost_VADER': np.array([[135, 25, 20], [20, 190, 30], [15, 35, 130]])
-    }
 
 # Mengatur tampilan sidebar
 metric = st.sidebar.selectbox(
@@ -162,30 +134,33 @@ with tab1:
                     textposition='auto',
                 ))
             elif metric == "Precision":
+                bert_macro_precisions = [bert_precisions[model]['macro'] for model in models]
                 fig.add_trace(go.Bar(
                     x=models,
-                    y=bert_precisions,
+                    y=bert_macro_precisions,
                     name='BERT',
                     marker_color='indianred',
-                    text=[f"{prec:.5f}" for prec in bert_precisions],
+                    text=[f"{prec:.5f}" for prec in bert_macro_precisions],
                     textposition='auto',
                 ))
             elif metric == "Recall":
+                bert_macro_recalls = [bert_recalls[model]['macro'] for model in models]
                 fig.add_trace(go.Bar(
                     x=models,
-                    y=bert_recalls,
+                    y=bert_macro_recalls,
                     name='BERT',
                     marker_color='indianred',
-                    text=[f"{rec:.5f}" for rec in bert_recalls],
+                    text=[f"{rec:.5f}" for rec in bert_macro_recalls],
                     textposition='auto',
                 ))
             elif metric == "F1 Score":
+                bert_macro_f1s = [bert_f1_scores[model]['macro'] for model in models]
                 fig.add_trace(go.Bar(
                     x=models,
-                    y=bert_f1_scores,
+                    y=bert_macro_f1s,
                     name='BERT',
                     marker_color='indianred',
-                    text=[f"{f1:.5f}" for f1 in bert_f1_scores],
+                    text=[f"{f1:.5f}" for f1 in bert_macro_f1s],
                     textposition='auto',
                 ))
         
@@ -200,30 +175,33 @@ with tab1:
                     textposition='auto',
                 ))
             elif metric == "Precision":
+                vader_macro_precisions = [vader_precisions[model]['macro'] for model in models]
                 fig.add_trace(go.Bar(
                     x=models,
-                    y=vader_precisions,
+                    y=vader_macro_precisions,
                     name='VADER Lexicon',
                     marker_color='royalblue',
-                    text=[f"{prec:.5f}" for prec in vader_precisions],
+                    text=[f"{prec:.5f}" for prec in vader_macro_precisions],
                     textposition='auto',
                 ))
             elif metric == "Recall":
+                vader_macro_recalls = [vader_recalls[model]['macro'] for model in models]
                 fig.add_trace(go.Bar(
                     x=models,
-                    y=vader_recalls,
+                    y=vader_macro_recalls,
                     name='VADER Lexicon',
                     marker_color='royalblue',
-                    text=[f"{rec:.5f}" for rec in vader_recalls],
+                    text=[f"{rec:.5f}" for rec in vader_macro_recalls],
                     textposition='auto',
                 ))
             elif metric == "F1 Score":
+                vader_macro_f1s = [vader_f1_scores[model]['macro'] for model in models]
                 fig.add_trace(go.Bar(
                     x=models,
-                    y=vader_f1_scores,
+                    y=vader_macro_f1s,
                     name='VADER Lexicon',
                     marker_color='royalblue',
-                    text=[f"{f1:.5f}" for f1 in vader_f1_scores],
+                    text=[f"{f1:.5f}" for f1 in vader_macro_f1s],
                     textposition='auto',
                 ))
                 
@@ -237,6 +215,87 @@ with tab1:
             height=500
         )
         st.plotly_chart(fig, use_container_width=True)
+        
+        # Detailed metrics table
+        if metric != "Accuracy":
+            st.subheader(f"Detail {metric} per Kelas")
+            
+            if model_type == "BERT":
+                if metric == "Precision":
+                    detail_data = {model: {k: v for k, v in bert_precisions[model].items() if k in ['0', '1', '2']} for model in models}
+                elif metric == "Recall":
+                    detail_data = {model: {k: v for k, v in bert_recalls[model].items() if k in ['0', '1', '2']} for model in models}
+                else:  # F1 Score
+                    detail_data = {model: {k: v for k, v in bert_f1_scores[model].items() if k in ['0', '1', '2']} for model in models}
+                
+                df = pd.DataFrame({
+                    "Algoritma": models,
+                    "Negatif (0)": [detail_data[model]['0'] for model in models],
+                    "Netral (1)": [detail_data[model]['1'] for model in models],
+                    "Positif (2)": [detail_data[model]['2'] for model in models],
+                    "Macro Avg": [detail_data[model]['macro'] for model in models],
+                    "Support": [f"{class_support['BERT']['0']}, {class_support['BERT']['1']}, {class_support['BERT']['2']}"] * len(models)
+                })
+                
+                st.dataframe(df, use_container_width=True)
+                
+            elif model_type == "VADER Lexicon":
+                if metric == "Precision":
+                    detail_data = {model: {k: v for k, v in vader_precisions[model].items() if k in ['0', '1', '2']} for model in models}
+                elif metric == "Recall":
+                    detail_data = {model: {k: v for k, v in vader_recalls[model].items() if k in ['0', '1', '2']} for model in models}
+                else:  # F1 Score
+                    detail_data = {model: {k: v for k, v in vader_f1_scores[model].items() if k in ['0', '1', '2']} for model in models}
+                
+                df = pd.DataFrame({
+                    "Algoritma": models,
+                    "Negatif (0)": [detail_data[model]['0'] for model in models],
+                    "Netral (1)": [detail_data[model]['1'] for model in models],
+                    "Positif (2)": [detail_data[model]['2'] for model in models],
+                    "Macro Avg": [detail_data[model]['macro'] for model in models],
+                    "Support": [f"{class_support['VADER']['0']}, {class_support['VADER']['1']}, {class_support['VADER']['2']}"] * len(models)
+                })
+                
+                st.dataframe(df, use_container_width=True)
+                
+            else:  # Keduanya
+                st.write("**BERT**")
+                if metric == "Precision":
+                    detail_data = {model: {k: v for k, v in bert_precisions[model].items() if k in ['0', '1', '2']} for model in models}
+                elif metric == "Recall":
+                    detail_data = {model: {k: v for k, v in bert_recalls[model].items() if k in ['0', '1', '2']} for model in models}
+                else:  # F1 Score
+                    detail_data = {model: {k: v for k, v in bert_f1_scores[model].items() if k in ['0', '1', '2']} for model in models}
+                
+                df_bert = pd.DataFrame({
+                    "Algoritma": models,
+                    "Negatif (0)": [detail_data[model]['0'] for model in models],
+                    "Netral (1)": [detail_data[model]['1'] for model in models],
+                    "Positif (2)": [detail_data[model]['2'] for model in models],
+                    "Macro Avg": [detail_data[model]['macro'] for model in models],
+                    "Support": [f"{class_support['BERT']['0']}, {class_support['BERT']['1']}, {class_support['BERT']['2']}"] * len(models)
+                })
+                
+                st.dataframe(df_bert, use_container_width=True)
+                
+                st.write("**VADER Lexicon**")
+                if metric == "Precision":
+                    detail_data = {model: {k: v for k, v in vader_precisions[model].items() if k in ['0', '1', '2']} for model in models}
+                elif metric == "Recall":
+                    detail_data = {model: {k: v for k, v in vader_recalls[model].items() if k in ['0', '1', '2']} for model in models}
+                else:  # F1 Score
+                    detail_data = {model: {k: v for k, v in vader_f1_scores[model].items() if k in ['0', '1', '2']} for model in models}
+                
+                df_vader = pd.DataFrame({
+                    "Algoritma": models,
+                    "Negatif (0)": [detail_data[model]['0'] for model in models],
+                    "Netral (1)": [detail_data[model]['1'] for model in models],
+                    "Positif (2)": [detail_data[model]['2'] for model in models],
+                    "Macro Avg": [detail_data[model]['macro'] for model in models],
+                    "Support": [f"{class_support['VADER']['0']}, {class_support['VADER']['1']}, {class_support['VADER']['2']}"] * len(models)
+                })
+                
+                st.dataframe(df_vader, use_container_width=True)
         
     else:  # Confusion Matrix
         st.subheader(f"Confusion Matrix - {selected_algorithm}")
@@ -284,6 +343,13 @@ with tab2:
         Gradient Boosting adalah teknik machine learning yang digunakan untuk membuat model prediktif. GBDT secara khusus menggunakan decision tree sebagai learner dasar. 
         Algoritma ini membangun model secara bertahap (iteratif), dengan setiap iterasi mencoba memperbaiki kesalahan dari iterasi sebelumnya.
         
+        **Parameter yang digunakan:**
+        - n_estimators: 100
+        - learning_rate: 0.1
+        - max_depth: 3
+        - subsample: 1.0
+        - criterion: 'friedman_mse'
+        
         **Cara Kerja:**
         1. Memulai dengan model sederhana (biasanya satu node tree)
         2. Mengidentifikasi "residual" atau kesalahan dari model
@@ -312,6 +378,13 @@ with tab2:
         Support Vector Classifier (SVC) adalah implementasi dari Support Vector Machine (SVM) untuk klasifikasi. SVC mencari hyperplane terbaik 
         yang memisahkan data dari kelas yang berbeda dengan margin maksimal.
         
+        **Parameter yang digunakan:**
+        - kernel: 'rbf'
+        - C: 1.0
+        - gamma: 'scale'
+        - decision_function_shape: 'ovr' (one-vs-rest)
+        - probability: True
+        
         **Cara Kerja:**
         1. Mentransformasikan data ke dimensi yang lebih tinggi menggunakan kernel
         2. Menemukan hyperplane optimal yang memaksimalkan margin antara kelas
@@ -339,6 +412,15 @@ with tab2:
         **Deskripsi:**
         XGBoost adalah implementasi teroptimasi dari algoritma Gradient Boosting. Dikenal karena kecepatan dan performa yang unggul,
         XGBoost telah menjadi salah satu algoritma yang paling populer dalam kompetisi machine learning.
+        
+        **Parameter yang digunakan:**
+        - n_estimators: 100
+        - learning_rate: 0.1
+        - max_depth: 3
+        - subsample: 0.8
+        - colsample_bytree: 0.8
+        - objective: 'multi:softprob'
+        - eval_metric: 'mlogloss'
         
         **Cara Kerja:**
         1. Menggunakan prinsip gradient boosting seperti GBDT
@@ -372,12 +454,12 @@ with tab3:
         'Algoritma': models,
         'Akurasi BERT': bert_accuracies,
         'Akurasi VADER': vader_accuracies,
-        'Precision BERT': bert_precisions,
-        'Precision VADER': vader_precisions,
-        'Recall BERT': bert_recalls,
-        'Recall VADER': vader_recalls,
-        'F1 Score BERT': bert_f1_scores,
-        'F1 Score VADER': vader_f1_scores
+        'Precision BERT (macro)': [bert_precisions[model]['macro'] for model in models],
+        'Precision VADER (macro)': [vader_precisions[model]['macro'] for model in models],
+        'Recall BERT (macro)': [bert_recalls[model]['macro'] for model in models],
+        'Recall VADER (macro)': [vader_recalls[model]['macro'] for model in models],
+        'F1 Score BERT (macro)': [bert_f1_scores[model]['macro'] for model in models],
+        'F1 Score VADER (macro)': [vader_f1_scores[model]['macro'] for model in models]
     })
     
     # Format angka dalam tabel
@@ -391,43 +473,29 @@ with tab3:
     st.markdown("""
     ### Kesimpulan Utama
 
-    1. **XGBoost Menunjukkan Performa Terbaik**
-       - Secara konsisten, XGBoost memberikan nilai akurasi, presisi, recall, dan F1-score tertinggi baik menggunakan BERT maupun VADER Lexicon.
-       - Hal ini menunjukkan keunggulan algoritma XGBoost dalam mengklasifikasikan sentimen pada dataset program stunting.
+    1. **XGBoost dan GBDT Menunjukkan Performa Terbaik dengan VADER**
+       - Secara konsisten, GBDT dan XGBoost memberikan nilai akurasi tertinggi (95.60% dan 95.25%) saat menggunakan VADER Lexicon.
+       - Untuk metriks F1-score (macro), GBDT mencapai 0.85 dan XGBoost 0.84 dengan VADER, mengungguli SVC.
 
-    2. **BERT vs VADER Lexicon**
-       - Model yang menggunakan fitur BERT secara konsisten menunjukkan performa yang lebih baik dibandingkan model berbasis VADER Lexicon.
-       - Ini mengindikasikan bahwa BERT mampu menangkap konteks dan semantik dalam bahasa Indonesia terkait program stunting dengan lebih baik.
+    2. **SVC Unggul dengan BERT**
+       - Dalam konteks BERT, SVC mencapai akurasi tertinggi yakni 78.94%, dibandingkan XGBoost (76.60%) dan GBDT (75.29%).
+       - SVC juga menunjukkan F1-score (macro) terbaik yakni 0.65 untuk pelabelan BERT.
 
-    3. **Perbandingan Algoritma**
-       - Urutan performa algoritma dari yang terbaik: XGBoost > GBDT > SVC
-       - SVC memiliki waktu pelatihan tercepat tetapi dengan akurasi terendah.
-       - GBDT memiliki performa yang cukup baik dengan waktu pelatihan moderat.
-       - XGBoost memerlukan waktu pelatihan terlama tetapi memberikan hasil terbaik.
+    3. **BERT vs VADER Lexicon**
+       - Model yang menggunakan fitur VADER secara konsisten menunjukkan performa yang lebih baik dibandingkan model BERT.
+       - Gap performa antara keduanya cukup signifikan, dengan peningkatan akurasi 17-20% saat menggunakan VADER.
+       - Ini mengindikasikan bahwa VADER lebih sesuai untuk analisis sentimen berbahasa Indonesia dalam konteks program stunting.
+
+    3. **Perbandingan Distribusi Kelas**
+       - Data VADER memiliki kecenderungan strong bias terhadap label netral (1229 dari 1453 data), sementara distribusi BERT lebih seimbang.
+       - Hal ini menjelaskan mengapa akurasi VADER tinggi, namun F1-score makro lebih rendah untuk beberapa model karena kesulitan mendeteksi kelas minoritas.
 
     ### Implikasi untuk Analisis Sentimen Program Stunting
 
     Berdasarkan hasil ini, untuk mengklasifikasikan sentimen publik terhadap program stunting di media sosial X:
     
-    - **Rekomendasi Model**: XGBoost dengan fitur BERT memberikan hasil optimal untuk penggunaan di lingkungan produksi.
-    - **Pertimbangan Sumber Daya**: Jika sumber daya komputasi terbatas, GBDT dapat menjadi alternatif dengan performa yang masih cukup baik.
-    - **Pengembangan Lebih Lanjut**: Model dapat ditingkatkan melalui teknik hyperparameter tuning dan ensemble learning untuk meningkatkan performa lebih lanjut.
+    - **Rekomendasi Model**: GBDT dengan fitur VADER memberikan hasil optimal untuk fokus pada akurasi keseluruhan.
+    - **Pertimbangan Keseimbangan Kelas**: Jika deteksi sentimen negatif/positif (kelas minoritas) penting, SVC dengan BERT lebih rekomen.
+    - **Trade-off Kecepatan vs Akurasi**: SVC menawarkan pelatihan tercepat (14 detik) dengan akurasi kompetitif pada VADER.
+    - **Pengembangan Lebih Lanjut**: Teknik oversampling atau class weighting dapat diterapkan untuk mengatasi ketidakseimbangan kelas.
     """)
-    
-    st.subheader("Tantangan dan Keterbatasan")
-    st.markdown("""
-    - **Ketidakseimbangan Kelas**: Dalam beberapa kasus, distribusi sentimen yang tidak seimbang dapat mempengaruhi performa model.
-    - **Konteks Budaya**: Ekspresi sentimen dalam bahasa Indonesia seputar program stunting memiliki keunikan budaya yang mungkin tidak sepenuhnya tertangkap oleh model.
-    - **Ambiguitas Bahasa**: Sarkasme, metafora, dan ambiguitas bahasa dalam tweet masih menjadi tantangan untuk model klasifikasi sentimen.
-    """)
-
-# Informasi tambahan di bagian bawah halaman
-st.markdown("---")
-st.markdown("""
-### Metodologi Singkat
-Analisis ini menggunakan pendekatan berikut:
-1. **Preprocessing Data**: Pembersihan teks, stemming, dan tokenisasi data tweet
-2. **Ekstraksi Fitur**: Menggunakan TF-IDF Vectorizer untuk mengubah teks menjadi fitur numerik
-3. **Pemodelan**: Melatih tiga algoritma (GBDT, SVC, XGBoost) menggunakan sentimen dari BERT dan VADER
-4. **Evaluasi**: Membandingkan performa model menggunakan metrik standar
-""")
