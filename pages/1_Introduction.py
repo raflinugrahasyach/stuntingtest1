@@ -1,8 +1,9 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+import base64
+from PIL import Image
 import os
 
 # Konfigurasi halaman
@@ -37,13 +38,19 @@ with tab1:
         ### Latar Belakang
         
         Stunting tetap menjadi masalah kesehatan yang memengaruhi kualitas SDM masa depan. 
+        
         Menurut WHO, pada 2018, stunting mempengaruhi 149 juta (21,9%) anak di bawah 5 tahun, dengan kekurangan gizi menyebabkannya 45% kematian anak.
-        Kekurangan gizi yang menyebabkan stunting (Zaleha & Idris, 2022). Pemerintah menargetkan penurunan stunting dari 21.6% pada 2022 menjadi 14% pada 2024 (Muhaimin et al., 2023).
+        
+        Kekurangan gizi yang menyebabkan stunting (Zaleha & Idris, 2022).
+        
+        Pemerintah menargetkan penurunan stunting dari 21.6% pada 2022 menjadi 14% pada 2024 (Muhaimin et al., 2023).
+        
         Twitter berperan penting dalam membentuk opini publik tentang kesehatan dan stunting (Inayah & Purba, 2020).
-
         """)
     
     with col2:
+        # Gunakan placeholder image karena tidak ada gambar dari PPT yang disediakan
+        # Di implementasi nyata, kita akan mengganti ini dengan gambar aktual dari PPT
         st.image("https://via.placeholder.com/400x300?text=Ilustrasi+Stunting", caption="Ilustrasi Program Stunting di Indonesia", use_container_width=True)
     
     st.markdown("---")
@@ -66,11 +73,11 @@ with tab2:
     
     1. Memberikan wawasan tentang persepsi/sentimen publik.
     
-    2. Mengidentifikasi aktor kunci dalam pembentukan opini publik
+    2. Mengidentifikasi aktor kunci dalam pembentukan opini publik.
     
     3. Memberikan masukan kepada pemerintah.
     
-    4. Memberikan kontribusi pada pengembangan ilmu data
+    4. Memberikan kontribusi pada pengembangan ilmu data.
     """)
     
 with tab3:
@@ -91,7 +98,7 @@ with tab3:
         st.markdown("""
         ### Penelitian Terdahulu
         
-        Beberapa studi terkait analisis sentimen dan jaringan sosial telah dilakukan untuk menilai persepsi publik terhadap isu kesehatan. Namun, penelitian ini mengambil pendekatan yang lebih terkini dengan:
+        Beberapa studi terkait analisis sentimen dan jaringan sosial telah dilakukan untuk menilai persepsi publik terhadap isu kesehatan:
         
         - Analisis Akun Twitter Berpengaruh terkait Covid-19 menggunakan Social Network Analysis (Kartino et al, 2021)
         - Analisis sentimen terhadap pelayanan Kesehatan berdasarkan ulasan Google Maps menggunakan BERT (Widagdo et al, 2023)
@@ -111,95 +118,101 @@ with tab4:
     2. Periode Pengumpulan Data: Juli - Oktober 2024
     3. Fokus: Percakapan terkait program stunting
     4. Kolom yang digunakan untuk Analisis:
-            full_text
-            username
-            reply_count
-
+            - full_text
+            - username
+            - reply_count
     """)
     
-    # Visualisasi alur metodologi
-    st.markdown("#### Alur Metodologi Penelitian")
-    
-    col1, col2, col3, col4 = st.columns(4)
-    
-    with col1:
-        st.markdown("""
-        📥 **Pengumpulan Data**
-        - Scraping X API
-        - Kata kunci stunting
-        - Filter tweet
-        """)
-    
-    with col2:
-        st.markdown("""
-        🧹 **Pra-pemrosesan**
-        - Pembersihan teks
-        - Normalisasi
-        - Tokenisasi
-        """)
-    
-    with col3:
-        st.markdown("""
-        🔍 **Analisis Sentimen**
-        - VADER Lexicon
-        - BERT Model
-        - Komparasi hasil
-        """)
-    
-    with col4:
-        st.markdown("""
-        📊 **Visualisasi & Insight**
-        - Word Cloud
-        - Distribusi sentimen
-        - Jaringan interaksi
-        """)
-
 with tab5:
     st.markdown("### Data Sampel")
     
-    # Sample data (dummy data for illustration)
-    data = {
-        'username': ['user1', 'user2', 'user3', 'user4', 'user5'],
-        'full_text': [
-            'Program stunting di daerah saya sangat membantu keluarga dengan ekonomi rendah. Terima kasih pemerintah!',
-            'Pendistribusian dana program stunting masih belum merata di daerah terpencil. Tolong perhatikan!',
-            'Sosialisasi program stunting perlu ditingkatkan agar masyarakat lebih paham manfaatnya.',
-            'Saya lihat program stunting di desa kami sudah berjalan dengan baik, anak-anak jadi lebih sehat.',
-            'Kenapa program stunting tidak menjangkau daerah kami? Padahal banyak yang membutuhkan.'
-        ],
-        'BERT_Label': ['positive', 'negative', 'neutral', 'positive', 'negative'],
-        'VADER_Label': ['positive', 'negative', 'neutral', 'positive', 'negative']
-    }
-    
-    df_sample = pd.DataFrame(data)
-    
-    # Tampilkan data sampel
-    st.dataframe(df_sample, use_container_width=True)
-    
-    # Visualisasi distribusi sentimen dari data sampel
-    st.markdown("#### Distribusi Sentimen dari Data Sampel")
-    
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        bert_counts = df_sample['BERT_Label'].value_counts()
+    try:
+        # Membaca data aktual (bukan dummy)
+        df = pd.read_csv('data/db_merge_with_sentiment_24apr.csv')
         
-        fig, ax = plt.subplots(figsize=(8, 6))
-        ax.pie(bert_counts, labels=bert_counts.index, autopct='%1.1f%%', startangle=90, colors=sns.color_palette('viridis'))
-        ax.set_title('Distribusi Sentimen BERT')
-        ax.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle
+        # Menampilkan 5 data teratas
+        st.dataframe(df.head(5), use_container_width=True)
         
-        st.pyplot(fig)
+        # Visualisasi distribusi sentimen dari data sampel
+        st.markdown("#### Distribusi Sentimen dari Data")
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            # Jika BERT_Label ada dalam dataset
+            if 'BERT_Label' in df.columns:
+                bert_counts = df['BERT_Label'].value_counts()
+                
+                fig, ax = plt.subplots(figsize=(8, 6))
+                ax.pie(bert_counts, labels=bert_counts.index, autopct='%1.1f%%', startangle=90, colors=sns.color_palette('viridis'))
+                ax.set_title('Distribusi Sentimen BERT')
+                ax.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle
+                
+                st.pyplot(fig)
+            else:
+                st.warning("Kolom BERT_Label tidak ditemukan dalam dataset")
+        
+        with col2:
+            # Jika VADER_Label ada dalam dataset
+            if 'VADER_Label' in df.columns:
+                vader_counts = df['VADER_Label'].value_counts()
+                
+                fig, ax = plt.subplots(figsize=(8, 6))
+                ax.pie(vader_counts, labels=vader_counts.index, autopct='%1.1f%%', startangle=90, colors=sns.color_palette('magma'))
+                ax.set_title('Distribusi Sentimen VADER')
+                ax.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle
+                
+                st.pyplot(fig)
+            else:
+                st.warning("Kolom VADER_Label tidak ditemukan dalam dataset")
     
-    with col2:
-        vader_counts = df_sample['VADER_Label'].value_counts()
+    except FileNotFoundError:
+        st.error("File data/db_merge_with_sentiment_24apr.csv tidak ditemukan.")
         
-        fig, ax = plt.subplots(figsize=(8, 6))
-        ax.pie(vader_counts, labels=vader_counts.index, autopct='%1.1f%%', startangle=90, colors=sns.color_palette('magma'))
-        ax.set_title('Distribusi Sentimen VADER')
-        ax.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle
+        # Sebagai fallback, gunakan data dari dokumen yang diberikan
+        st.markdown("#### Menggunakan data sampel dari dokumen:")
         
-        st.pyplot(fig)
+        data = {
+            'username': ['oravine_', 'sebayu_94FM', 'raquellstep', 'ajengrizkyJ'],
+            'full_text': [
+                'cuma yang nggak mengalami PTSD yang digunain buat perhitungan IQ. Ini salah satu contoh yang nunjukin sampel yang digunain di sini berasal dari wilayah tertentu dengan kondisi sosial tertentu termasuk disebutin daerah yang terdampak defisiensi yodium cacingan atau stunting.',
+                'Dinas Pekerjaan Umum dan Penataan Ruang (DPUPR) Kota Tegal bersama Kelurahan Tegalsari serta Puskesmas Tegal Barat bersinergi dan berkolaborasi melalui inovasinya dalam menangani kasus stunting. Selengkapnya di https://t.co/VBeJ8wCaE2 #infotegal #kotategal #pemkottegal https://t.co/zgVjt1Hc78',
+                '@ajengrizkyJ @bibahjenner @tanyakanrl kak maaf bgt ya kalo salah tp yg aku sebut jg bukan ibunya yg stunting tp nnt si anaknya. itu jg faktor tidak langsung. makanya kan aku blg cmiiw',
+                '@raquellstep @bibahjenner @tanyakanrl Belajar yg bener besok balik lagi.. stunting itu karena gizi anak sejak kehamilan sampe usia tertentu tidak terpenuhi.. bukan masalah ibunya tidak tinggi.. kocak banget ortunya pendek disebut stunting..'
+            ],
+            'BERT_Label': ['neutral', 'neutral', 'negative', 'neutral'],
+            'VADER_Label': ['neutral', 'neutral', 'negative', 'neutral']
+        }
+        
+        df_sample = pd.DataFrame(data)
+        
+        # Tampilkan data sampel
+        st.dataframe(df_sample, use_container_width=True)
+        
+        # Visualisasi distribusi sentimen dari data sampel
+        st.markdown("#### Distribusi Sentimen dari Data Sampel")
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            bert_counts = df_sample['BERT_Label'].value_counts()
+            
+            fig, ax = plt.subplots(figsize=(8, 6))
+            ax.pie(bert_counts, labels=bert_counts.index, autopct='%1.1f%%', startangle=90, colors=sns.color_palette('viridis'))
+            ax.set_title('Distribusi Sentimen BERT')
+            ax.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle
+            
+            st.pyplot(fig)
+        
+        with col2:
+            vader_counts = df_sample['VADER_Label'].value_counts()
+            
+            fig, ax = plt.subplots(figsize=(8, 6))
+            ax.pie(vader_counts, labels=vader_counts.index, autopct='%1.1f%%', startangle=90, colors=sns.color_palette('magma'))
+            ax.set_title('Distribusi Sentimen VADER')
+            ax.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle
+            
+            st.pyplot(fig)
 
 # Tambahkan informasi mengenai pengembangan aplikasi streamlit
 st.markdown("---")
