@@ -36,10 +36,11 @@ with tab1:
         st.markdown("""
         ### Latar Belakang
         
-        Stunting merupakan masalah kesehatan yang berdampak pada pertumbuhan dan perkembangan anak-anak. 
-        Program penanggulangan stunting di Indonesia semakin diperhatikan oleh pemerintah. 
-        Penelitian ini bertujuan untuk mengidentifikasi persepsi publik mengenai program stunting melalui 
-        analisis media sosial X, dengan menggunakan metode analisis sentimen dan jaringan sosial.
+        Stunting tetap menjadi masalah kesehatan yang memengaruhi kualitas SDM masa depan. 
+        Menurut WHO, pada 2018, stunting mempengaruhi 149 juta (21,9%) anak di bawah 5 tahun, dengan kekurangan gizi menyebabkannya 45% kematian anak.
+        Kekurangan gizi yang menyebabkan stunting (Zaleha & Idris, 2022). Pemerintah menargetkan penurunan stunting dari 21.6% pada 2022 menjadi 14% pada 2024 (Muhaimin et al., 2023).
+        Twitter berperan penting dalam membentuk opini publik tentang kesehatan dan stunting (Inayah & Purba, 2020).
+
         """)
     
     with col2:
@@ -50,47 +51,28 @@ with tab1:
     st.markdown("""
     ### Tujuan Penelitian
     
-    1. Mengidentifikasi dan mengklasifikasikan sentimen publik terhadap program stunting 2024 di media sosial X menggunakan VADER Lexicon dan BERT.
+    1. Mengidentifikasi dan mengklasifikasikan sentimen publik terhadap program stunting tahun 2024 di media sosial Twitter menggunakan VADER Lexicon dan BERT.
     
-    2. Membandingkan performa algoritma machine learning GBT, SVM, dan XGBoost untuk menentukan model dengan akurasi terbaik dalam klasifikasi sentimen publik terkait program stunting.
+    2. Membandingkan algoritma machine learning seperti Gradient-Boosted Tree (GBT), Support Vector Machine (SVM), dan Extreme Gradient Boosting (XGBoost) untuk menentukan model dengan akurasi tertinggi dalam klasifikasi sentimen publik terkait program stunting.
     
-    3. Menganalisis posisi dan peran aktor dalam jaringan sosial yang terbentuk dari percakapan mengenai program stunting di media sosial X.
+    3. Menganalisis kata-kata yang paling sering muncul di kalangan pengguna media sosial Twitter terkait program stunting di Indonesia.
+                
+    4. Menentukan aktor-aktor kunci yang berperan penting dalam jaringan sosial yang terbentuk dari percakapan terkait program stunting di Twitter melalui analisis jaringan sosial (SNA).
     """)
 
 with tab2:
     st.markdown("""
     ### Manfaat Penelitian
     
-    1. **Evaluasi Program**: Memberikan wawasan tentang persepsi publik terhadap program penanggulangan stunting, yang dapat digunakan untuk evaluasi dan perbaikan kebijakan.
+    1. Memberikan wawasan tentang persepsi/sentimen publik.
     
-    2. **Identifikasi Aktor Kunci**: Mengidentifikasi aktor kunci dalam pembentukan opini publik, menggunakan analisis jaringan sosial untuk memetakan pengaruh dalam diskusi mengenai program stunting.
+    2. Mengidentifikasi aktor kunci dalam pembentukan opini publik
     
-    3. **Rekomendasi Kebijakan**: Memberikan masukan kepada pemerintah terkait strategi optimalisasi program penanggulangan stunting yang lebih responsif terhadap kebutuhan masyarakat.
+    3. Memberikan masukan kepada pemerintah.
     
-    4. **Kontribusi Ilmiah**: Memberikan kontribusi pada pengembangan ilmu data, khususnya dalam analisis sentimen dan jaringan sosial, serta membuka peluang untuk penelitian lebih lanjut di bidang komunikasi digital dan kesehatan masyarakat.
+    4. Memberikan kontribusi pada pengembangan ilmu data
     """)
     
-    # Visualisasi manfaat penelitian (ilustrasi)
-    st.markdown("#### Visualisasi Manfaat Penelitian")
-    
-    manfaat_data = {
-        'Kategori': ['Kebijakan Publik', 'Kesehatan Masyarakat', 'Pengembangan Ilmu', 'Komunikasi Publik'],
-        'Nilai': [85, 90, 75, 80]
-    }
-    
-    fig, ax = plt.subplots(figsize=(10, 6))
-    sns.barplot(x='Kategori', y='Nilai', data=pd.DataFrame(manfaat_data), ax=ax, palette='viridis')
-    ax.set_title('Distribusi Manfaat Penelitian Berdasarkan Kategori')
-    ax.set_ylim(0, 100)
-    ax.set_ylabel('Tingkat Manfaat (%)')
-    ax.set_xlabel('Kategori Manfaat')
-    
-    # Menambahkan nilai di atas bar
-    for i, v in enumerate(manfaat_data['Nilai']):
-        ax.text(i, v + 2, str(v), ha='center')
-    
-    st.pyplot(fig)
-
 with tab3:
     col1, col2 = st.columns(2)
     
@@ -100,10 +82,9 @@ with tab3:
         
         Penelitian ini terbatas pada analisis data dari media sosial X terkait persepsi publik terhadap program stunting di tahun 2024. Fokus utama adalah pada:
         
-        - Analisis sentimen menggunakan VADER Lexicon dan BERT
-        - Evaluasi performa model machine learning dalam klasifikasi sentimen
-        - Analisis data hanya dari platform X
-        - Periode pengamatan tahun 2024
+        - Data dikumpulkan dari Juli - Oktober 2024
+        - Kata kunci "Stunting" & "Program Stunting"
+        - Tweet berbahasa Indonesia
         """)
     
     with col2:
@@ -112,33 +93,12 @@ with tab3:
         
         Beberapa studi terkait analisis sentimen dan jaringan sosial telah dilakukan untuk menilai persepsi publik terhadap isu kesehatan. Namun, penelitian ini mengambil pendekatan yang lebih terkini dengan:
         
-        - Penggunaan model machine learning terbaru
-        - Integrasi analisis jaringan sosial
-        - Penggunaan data real-time dari media sosial
-        - Fokus spesifik pada program stunting di Indonesia
+        - Analisis Akun Twitter Berpengaruh terkait Covid-19 menggunakan Social Network Analysis (Kartino et al, 2021)
+        - Analisis sentimen terhadap pelayanan Kesehatan berdasarkan ulasan Google Maps menggunakan BERT (Widagdo et al, 2023)
+        - Social Media Analysis and Topic Modeling: Case Study of Stunting in Indonesia (Muhaimin et al, 2023)
+        - Tag me a label with multi-arm: Active learning for telugu sentiment analysis (Mukku et al, 2017)
         """)
     
-    # Timeline penelitian (ilustrasi)
-    st.markdown("#### Timeline Penelitian Terdahulu")
-    
-    timeline_data = {
-        'Tahun': [2018, 2019, 2020, 2021, 2022, 2023, 2024],
-        'Jumlah Penelitian': [3, 5, 7, 9, 12, 15, 18]
-    }
-    
-    fig, ax = plt.subplots(figsize=(10, 5))
-    sns.lineplot(x='Tahun', y='Jumlah Penelitian', data=pd.DataFrame(timeline_data), marker='o', linewidth=2, ax=ax)
-    ax.set_title('Perkembangan Penelitian Terkait Analisis Sentimen Program Stunting')
-    ax.set_ylabel('Jumlah Penelitian')
-    ax.set_xlabel('Tahun')
-    ax.grid(True, linestyle='--', alpha=0.7)
-    
-    # Menambahkan nilai di atas titik
-    for i, v in enumerate(timeline_data['Jumlah Penelitian']):
-        ax.text(timeline_data['Tahun'][i], v + 0.5, str(v), ha='center')
-    
-    st.pyplot(fig)
-
 with tab4:
     st.markdown("""
     ### Metodologi Penelitian - Pengumpulan Data
@@ -147,10 +107,14 @@ with tab4:
     
     #### Proses Pengumpulan Data:
     
-    1. **Penentuan Kata Kunci**: Mengidentifikasi kata kunci yang relevan dengan program stunting
-    2. **Pengumpulan Data**: Menggunakan API X untuk mengumpulkan tweet berdasarkan kata kunci
-    3. **Penyaringan Data**: Menyaring data yang tidak relevan atau duplikat
-    4. **Pra-pemrosesan**: Membersihkan data untuk analisis lebih lanjut
+    1. Alat yang Digunakan: Tweet Harvest
+    2. Periode Pengumpulan Data: Juli - Oktober 2024
+    3. Fokus: Percakapan terkait program stunting
+    4. Kolom yang digunakan untuk Analisis:
+            full_text
+            username
+            reply_count
+
     """)
     
     # Visualisasi alur metodologi
