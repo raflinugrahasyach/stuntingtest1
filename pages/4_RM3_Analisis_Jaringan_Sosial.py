@@ -77,7 +77,7 @@ def calculate_centrality(G):
     }
 
 # Fungsi untuk membuat visualisasi jaringan
-def plot_network(G, centrality_metric, metric_name, color_map, top_n=150):
+def plot_network(G, centrality_metric, metric_name, color_scale, top_n=150):
     # Pilih top N nodes berdasarkan centrality metric
     top_nodes = sorted(centrality_metric, key=centrality_metric.get, reverse=True)[:top_n]
     
@@ -85,45 +85,80 @@ def plot_network(G, centrality_metric, metric_name, color_map, top_n=150):
     G_sub = G.subgraph(top_nodes).copy()
     
     # Compute layout
-    pos = nx.spring_layout(G_sub, k=1.0, iterations=200, seed=42)
+    pos = nx.spring_layout(G_sub, k=1.5, iterations=300, seed=42)
     
-    # Plot
-    plt.figure(figsize=(12, 10))
+    # Prepare data for Plotly
+    edge_x = []
+    edge_y = []
+    for edge in G_sub.edges():
+        x0, y0 = pos[edge[0]]
+        x1, y1 = pos[edge[1]]
+        edge_x.extend([x0, x1, None])
+        edge_y.extend([y0, y1, None])
     
-    # Node sizes dan colors berdasarkan centrality
-    sizes = [centrality_metric[n]*3000 for n in G_sub.nodes()]
-    colors = [centrality_metric[n] for n in G_sub.nodes()]
+    # Edge trace
+    edge_trace = go.Scatter(
+        x=edge_x, y=edge_y,
+        line=dict(width=0.8, color='#888'),
+        hoverinfo='none',
+        mode='lines')
     
-    # Draw nodes
-    nx.draw_networkx_nodes(
-        G_sub, pos,
-        node_size=sizes,
-        node_color=colors,
-        cmap=color_map,
-        alpha=0.9
+    # Node trace
+    node_x = []
+    node_y = []
+    node_text = []
+    node_size = []
+    node_color = []
+    
+    for node in G_sub.nodes():
+        x, y = pos[node]
+        node_x.append(x)
+        node_y.append(y)
+        node_text.append(f"{node}<br>{metric_name}: {centrality_metric[node]:.4f}")
+        node_size.append(centrality_metric[node] * 100)
+        node_color.append(centrality_metric[node])
+    
+    node_trace = go.Scatter(
+        x=node_x, y=node_y,
+        mode='markers+text',
+        text=[node if centrality_metric[node] > np.percentile([centrality_metric[n] for n in G_sub.nodes()], 90) else "" for node in G_sub.nodes()],
+        textposition="top center",
+        textfont=dict(size=12),
+        hovertext=node_text,
+        hoverinfo='text',
+        marker=dict(
+            showscale=True,
+            colorscale=color_scale,
+            color=node_color,
+            size=[max(10, s) for s in node_size],
+            sizemode='diameter',
+            sizeref=2*max(node_size)/(40**2),
+            line=dict(width=1, color='#888'),
+            colorbar=dict(
+                thickness=15,
+                title=f'{metric_name} Centrality',
+                xanchor='left',
+                titleside='right'
+            )
+        )
     )
     
-    # Draw edges
-    nx.draw_networkx_edges(
-        G_sub, pos,
-        alpha=0.4, width=1
-    )
+    # Create figure
+    fig = go.Figure(data=[edge_trace, node_trace],
+                    layout=go.Layout(
+                        title=f'<b>{metric_name} Centrality</b> – Top {top_n} Actors',
+                        titlefont=dict(size=18),
+                        showlegend=False,
+                        hovermode='closest',
+                        margin=dict(b=20, l=5, r=5, t=40),
+                        xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+                        yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+                        plot_bgcolor='rgba(255,255,255,0.95)',
+                        paper_bgcolor='rgba(255,255,255,0.95)',
+                        height=600
+                    ))
     
-    # Draw labels untuk top 30 nodes
-    label_count = 30
-    labels = {n: n for n in top_nodes[:label_count]}
-    nx.draw_networkx_labels(
-        G_sub, pos,
-        labels=labels,
-        font_size=12,
-        font_color="black"
-    )
-    
-    plt.title(f'{metric_name} Centrality – Top {top_n}', fontsize=20)
-    plt.axis('off')
-    plt.tight_layout()
-    
-    return plt
+    return fig
 
 # Fungsi untuk menampilkan top nodes berdasarkan centrality
 def display_top_nodes(centrality_dict, metric_name, n=50):
@@ -156,38 +191,51 @@ if not db_merge.empty:
     
     with tab1:
         st.header("Overview Jaringan Sosial")
-        col1, col2 = st.columns(2)
         
-        with col1:
-            st.subheader("Statistik Jaringan")
+        # Tampilkan statistik dengan visualisasi yang lebih menarik
+        stat_col1, stat_col2, stat_col3, stat_col4 = st.columns(4)
+        
+        with stat_col1:
             st.markdown(f"""
-            - **Jumlah Nodes (Aktor)**: {G.number_of_nodes()}
-            - **Jumlah Edges (Interaksi)**: {G.number_of_edges()}
-            - **Rata-rata Degree**: {sum(dict(G.degree()).values()) / G.number_of_nodes():.2f}
-            - **Densitas Jaringan**: {nx.density(G):.5f}
-            """)
-            
-            st.subheader("Interpretasi")
-            st.markdown("""
-            Jaringan sosial yang terbentuk dari percakapan tentang program stunting menunjukkan beberapa karakteristik penting:
-            
-            1. **Aktor Kunci**: Terdapat beberapa aktor dengan pengaruh tinggi yang menjadi pusat diskusi
-            2. **Pola Interaksi**: Diskusi cenderung terkonsentrasi di sekitar aktor-aktor dengan centrality tinggi
-            3. **Aliran Informasi**: Informasi tentang program stunting menyebar melalui jalur-jalur tertentu dalam jaringan
-            """)
+            <div class="metric-card" style="text-align: center;">
+                <h2 style="color: #4e73df; margin: 0;">{G.number_of_nodes():,}</h2>
+                <p style="margin: 0;">Jumlah Aktor</p>
+            </div>
+            """, unsafe_allow_html=True)
         
-        with col2:
-            st.subheader("Tentang Analisis Jaringan Sosial")
-            st.markdown("""
-            **Social Network Analysis (SNA)** membantu kita memahami struktur relasi antar aktor dalam jaringan sosial.
-            Beberapa konsep penting dalam SNA:
-            
-            - **Centrality**: Mengukur posisi strategis aktor dalam jaringan
-            - **Degree**: Jumlah koneksi langsung yang dimiliki aktor
-            - **Betweenness**: Seberapa sering aktor menjadi 'jembatan' antar aktor lain
-            - **Closeness**: Seberapa dekat aktor dengan semua aktor lain di jaringan
-            - **Eigenvector**: Mengukur pengaruh aktor berdasarkan koneksinya dengan aktor berpengaruh lain
-            """)
+        with stat_col2:
+            st.markdown(f"""
+            <div class="metric-card" style="text-align: center;">
+                <h2 style="color: #1cc88a; margin: 0;">{G.number_of_edges():,}</h2>
+                <p style="margin: 0;">Jumlah Interaksi</p>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        with stat_col3:
+            avg_degree = sum(dict(G.degree()).values()) / G.number_of_nodes()
+            st.markdown(f"""
+            <div class="metric-card" style="text-align: center;">
+                <h2 style="color: #f6c23e; margin: 0;">{avg_degree:.2f}</h2>
+                <p style="margin: 0;">Rata-rata Degree</p>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        with stat_col4:
+            st.markdown(f"""
+            <div class="metric-card" style="text-align: center;">
+                <h2 style="color: #e74a3b; margin: 0;">{nx.density(G):.5f}</h2>
+                <p style="margin: 0;">Densitas Jaringan</p>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        # Tambahkan visualisasi distribusi degree
+        st.subheader("Distribusi Degree")
+        degree_dist = sorted([d for n, d in G.degree()], reverse=True)
+        fig_degree_dist = px.histogram(degree_dist, nbins=50,
+                                    labels={'value': 'Degree', 'count': 'Jumlah Aktor'},
+                                    title="Distribusi Degree dalam Jaringan")
+        fig_degree_dist.update_layout(bargap=0.1)
+        st.plotly_chart(fig_degree_dist, use_container_width=True)
     
     with tab2:
         st.header("Degree Centrality")
