@@ -102,20 +102,17 @@ def calculate_centrality(G):
     betweenness_centrality = nx.betweenness_centrality(G, k=100, normalized=True)
     closeness_centrality = nx.closeness_centrality(G)
     
-    # Untuk eigenvector centrality dengan penanganan error yang lebih baik
-    G_und = G.to_undirected()
-    
-    # Gunakan power_iteration_eigenvector_centrality yang lebih tahan error
+    # Eigenvector centrality untuk directed graph dengan penanganan error yang lebih baik
     try:
-        eigenvector_centrality = nx.eigenvector_centrality_numpy(G_und)
+        eigenvector_centrality = nx.eigenvector_centrality_numpy(G)
     except:
         try:
             # Fallback ke metode standar dengan iterasi yang lebih banyak
-            eigenvector_centrality = nx.eigenvector_centrality(G_und, max_iter=1000, tol=1e-03)
+            eigenvector_centrality = nx.eigenvector_centrality(G, max_iter=1000, tol=1e-03)
         except:
             # Jika masih gagal, gunakan pendekatan PageRank sebagai pengganti
             st.warning("Eigenvector centrality calculation failed, using PageRank as an approximation.")
-            eigenvector_centrality = nx.pagerank(G_und, alpha=0.85)
+            eigenvector_centrality = nx.pagerank(G, alpha=0.85)
     
     return {
         "degree": degree_centrality,
