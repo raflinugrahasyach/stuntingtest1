@@ -106,9 +106,14 @@ def build_network(df):
     G = nx.DiGraph()
     
     # Menambahkan edge ke graf berdasarkan data
+    edge_count = 0
     for index, row in db_sna.iterrows():
         if pd.notna(row["username"]) and pd.notna(row["in_reply_to_screen_name"]):
             G.add_edge(row["username"], row["in_reply_to_screen_name"])
+            edge_count += 1
+            # Limit edges to improve performance
+            if edge_count >= 2000:  # Cap at 2000 edges
+                break
     
     # Menghapus self-loops
     G.remove_edges_from(nx.selfloop_edges(G))
@@ -134,17 +139,23 @@ def calculate_centrality(G):
     }
 
 # Fungsi untuk membuat visualisasi jaringan interaktif dengan Plotly
-def plot_network_interactive(G, centrality_metric, metric_name, color_scale="Blues", top_n=150):
-    # Pilih top N nodes berdasarkan centrality metric
+def plot_lightweight_network(G, centrality_metric, metric_name, color_scale="Blues", top_n=50):
+    """
+    Creates a more lightweight network visualization by:
+    - Limiting the number of nodes displayed
+    - Using simpler visual elements
+    - Pre-computing layout
+    """
+    # Select only top N nodes based on centrality metric to reduce complexity
     top_nodes = sorted(centrality_metric, key=centrality_metric.get, reverse=True)[:top_n]
     
-    # Buat subgraph hanya dengan top nodes
+    # Create subgraph with only top nodes
     G_sub = G.subgraph(top_nodes).copy()
     
-    # Compute layout
-    pos = nx.spring_layout(G_sub, k=1.5, iterations=300, seed=42)
+    # Use a faster layout algorithm with fewer iterations
+    pos = nx.spring_layout(G_sub, k=0.8, iterations=50, seed=42)
     
-    # Prepare data for Plotly
+    # Prepare data for Plotly with simplified styling
     edge_x = []
     edge_y = []
     for edge in G_sub.edges():
@@ -153,73 +164,95 @@ def plot_network_interactive(G, centrality_metric, metric_name, color_scale="Blu
         edge_x.extend([x0, x1, None])
         edge_y.extend([y0, y1, None])
     
-    # Edge trace
+    # Create edge trace with minimal styling
     edge_trace = go.Scatter(
         x=edge_x, y=edge_y,
-        line=dict(width=0.8, color='#888'),
+        line=dict(width=0.6, color='#bbb'),  # Thinner, lighter lines
         hoverinfo='none',
         mode='lines')
     
-    # Node trace
+    # Prepare node data
     node_x = []
     node_y = []
     node_text = []
     node_size = []
     node_color = []
     
+    # Only create detailed hover data for top 20% of nodes to reduce rendering load
+    percentile_90 = np.percentile([centrality_metric[n] for n in G_sub.nodes()], 90)
+    
     for node in G_sub.nodes():
         x, y = pos[node]
         node_x.append(x)
         node_y.append(y)
-        node_text.append(f"{node}<br>{metric_name}: {centrality_metric[node]:.4f}")
-        node_size.append(centrality_metric[node] * 100)
+        
+        # Simplified hover text
+        if centrality_metric[node] > percentile_90:
+            node_text.append(f"{node}<br>{metric_name}: {centrality_metric[node]:.4f}")
+        else:
+            node_text.append(node)
+            
+        # Scale node sizes within a smaller range to avoid large nodes
+        node_size.append(5 + (centrality_metric[node] * 50))  # Limited size range
         node_color.append(centrality_metric[node])
     
-    # Menampilkan hanya label untuk node dengan centrality tinggi
-    percentile_cutoff = np.percentile([centrality_metric[n] for n in G_sub.nodes()], 90)
-    node_text_display = [node if centrality_metric[node] > percentile_cutoff else "" for node in G_sub.nodes()]
+    # Only show labels for top 10% of nodes
+    node_text_display = ["" for _ in G_sub.nodes()]
+    top_10_percent = sorted(range(len(node_color)), key=lambda i: node_color[i], reverse=True)[:int(len(node_color)*0.1)]
     
+    for idx in top_10_percent:
+        node_name = list(G_sub.nodes())[idx]
+        node_text_display[idx] = node_name
+    
+    # Create node trace with simplified styling
     node_trace = go.Scatter(
         x=node_x, y=node_y,
         mode='markers+text',
         text=node_text_display,
         textposition="top center",
-        textfont=dict(size=12),
+        textfont=dict(size=10),  # Smaller text
         hovertext=node_text,
         hoverinfo='text',
         marker=dict(
             showscale=True,
-            colorscale=color_scale,  # Gunakan string nama colorscale Plotly
+            colorscale=color_scale,
             color=node_color,
-            size=[max(10, s) for s in node_size],
+            size=node_size,
             sizemode='diameter',
-            sizeref=2*max(node_size)/(40**2) if node_size else 1,
-            line=dict(width=1, color='#888'),
+            sizeref=2*max(node_size)/(20**2) if node_size else 1,  # Smaller reference size
+            line=dict(width=0.5, color='#888'),  # Thinner border
             colorbar=dict(
-                thickness=15,
-                title=f'{metric_name} Centrality',
-                xanchor='left',
-                titleside='right'
+                thickness=10,  # Thinner colorbar
+                title=f'{metric_name}',
+                titleside='right',
+                len=0.5,  # Shorter colorbar
+                y=0.5,
+                yanchor='middle'
             )
         )
     )
     
-    # Create figure
+    # Create figure with simplified layout
     fig = go.Figure(data=[edge_trace, node_trace],
-                    layout=go.Layout(
-                        title=f'<b>{metric_name} Centrality</b> – Top {top_n} Actors',
-                        titlefont=dict(size=18),
-                        showlegend=False,
-                        hovermode='closest',
-                        margin=dict(b=20, l=5, r=5, t=40),
-                        xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
-                        yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
-                        plot_bgcolor='rgba(255,255,255,0.95)',
-                        paper_bgcolor='rgba(255,255,255,0.95)',
-                        height=600
-                    ))
+                layout=go.Layout(
+                    title=f'{metric_name} Centrality (Top {top_n})',
+                    titlefont=dict(size=16),
+                    showlegend=False,
+                    hovermode='closest',
+                    margin=dict(b=10, l=5, r=5, t=40),
+                    xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+                    yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+                    plot_bgcolor='rgba(255,255,255,0.95)',
+                    paper_bgcolor='rgba(255,255,255,0.95)',
+                    height=450,  # Reduced height
+                    autosize=True
+                ))
+    
+    # Disable some features to improve performance
+    fig.update_layout(dragmode=False)  # Disable drag mode
     
     return fig
+
 
 # Fungsi untuk menampilkan top nodes berdasarkan centrality
 def display_top_nodes(centrality_dict, metric_name, n=50):
@@ -382,8 +415,10 @@ if not db_merge.empty:
         col1, col2 = st.columns([2, 1])
         
         with col1:
-            # Gunakan string nama colorscale Plotly
-            fig_degree = plot_network_interactive(G, centrality_metrics["degree"], "Degree", "Blues", top_n)
+            # Add performance control
+            default_nodes = min(50, G.number_of_nodes())
+            display_nodes = st.slider("Jumlah node yang ditampilkan:", 10, 100, default_nodes, key="degree_nodes")
+            fig_degree = plot_lightweight_network(G, centrality_metrics["degree"], "Degree", "Blues", display_nodes)
             st.plotly_chart(fig_degree, use_container_width=True)
         
         with col2:
@@ -399,7 +434,6 @@ if not db_merge.empty:
             <li>Memiliki banyak interaksi langsung</li>
             <li>Sering menjadi pusat diskusi</li>
             <li>Memiliki pengaruh langsung yang besar</li>
-            <li>Berperan sebagai penyebar informasi utama</li>
             </ul>
             </div>
             """, unsafe_allow_html=True)
@@ -409,8 +443,7 @@ if not db_merge.empty:
         st.markdown("""
         <div class="info-card">
         <p><b>Betweenness Centrality</b> mengukur seberapa sering suatu aktor berada di jalur terpendek antara dua aktor lainnya.
-        Aktor dengan betweenness centrality tinggi berperan sebagai 'jembatan' atau perantara dalam jaringan dan memiliki
-        kontrol terhadap aliran informasi.</p>
+        Aktor dengan betweenness centrality tinggi berperan sebagai 'jembatan' atau perantara dalam jaringan.</p>
         </div>
         """, unsafe_allow_html=True)
         
@@ -418,26 +451,9 @@ if not db_merge.empty:
         col1, col2 = st.columns([2, 1])
         
         with col1:
-            fig_betweenness = plot_network_interactive(G, centrality_metrics["betweenness"], "Betweenness", "Oranges", top_n)
+            display_nodes = st.slider("Jumlah node yang ditampilkan:", 10, 100, default_nodes, key="betweenness_nodes")
+            fig_betweenness = plot_lightweight_network(G, centrality_metrics["betweenness"], "Betweenness", "Oranges", display_nodes)
             st.plotly_chart(fig_betweenness, use_container_width=True)
-        
-        with col2:
-            st.subheader("Top Aktor berdasarkan Betweenness Centrality")
-            df_betweenness = display_top_nodes(centrality_metrics["betweenness"], "Betweenness")
-            st.dataframe(df_betweenness.style.background_gradient(cmap="Oranges"), hide_index=True, use_container_width=True)
-            
-            st.markdown("""
-            <div class="info-card">
-            <h4>Interpretasi</h4>
-            <p>Aktor dengan betweenness centrality tinggi:</p>
-            <ul>
-            <li>Menjadi perantara informasi</li>
-            <li>Menghubungkan kelompok-kelompok berbeda</li>
-            <li>Memiliki kontrol terhadap aliran informasi</li>
-            <li>Penting untuk penyebaran program stunting antar komunitas</li>
-            </ul>
-            </div>
-            """, unsafe_allow_html=True)
     
     with tab4:
         st.header("Closeness Centrality")
@@ -453,7 +469,7 @@ if not db_merge.empty:
         col1, col2 = st.columns([2, 1])
         
         with col1:
-            fig_closeness = plot_network_interactive(G, centrality_metrics["closeness"], "Closeness", "Greens", top_n)
+            fig_closeness = plot_lightweight_network(G, centrality_metrics["closeness"], "Closeness", "Greens", top_n)
             st.plotly_chart(fig_closeness, use_container_width=True)
         
         with col2:
@@ -487,7 +503,7 @@ if not db_merge.empty:
         col1, col2 = st.columns([2, 1])
         
         with col1:
-            fig_eigenvector = plot_network_interactive(G, centrality_metrics["eigenvector"], "Eigenvector", "Purples", top_n)
+            fig_eigenvector = plot_lightweight_network(G, centrality_metrics["eigenvector"], "Eigenvector", "Purples", top_n)
             st.plotly_chart(fig_eigenvector, use_container_width=True)
         
         with col2:
