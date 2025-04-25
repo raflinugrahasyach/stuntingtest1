@@ -144,30 +144,38 @@ def plot_network(G, centrality_metric, metric_name, color_palette, top_n=100):
     else:
         cmap = plt.cm.viridis
     
-    # Compute layout - ForceAtlas2-based layout
-    pos = nx.spring_layout(G_sub, k=0.15, iterations=50, seed=42)
+    # Compute layout with adjusted parameters for eigenvector centrality
+    if metric_name == "Eigenvector":
+        # Use a different layout algorithm with more space between nodes
+        pos = nx.spring_layout(G_sub, k=0.3, iterations=100, seed=42)  # Increase k for more spacing
+    else:
+        pos = nx.spring_layout(G_sub, k=0.15, iterations=50, seed=42)
     
     # Plot dengan tampilan yang lebih bersih
     plt.figure(figsize=(10, 8), facecolor='white')
     
-    # Draw edges dengan panah yang lebih jelas
+    # Draw edges dengan panah yang lebih jelas dan sedikit transparency untuk eigenvector
+    edge_alpha = 0.2 if metric_name == "Eigenvector" else 0.3
     nx.draw_networkx_edges(
         G_sub, pos,
-        alpha=0.3,  # Tingkatkan opacity
-        width=1.2,  # Panah lebih tebal
-        edge_color='#666666',  # Warna panah lebih gelap
-        arrowsize=15,  # Ukuran panah lebih besar
-        arrowstyle='-|>',  # Gaya panah yang lebih jelas
-        connectionstyle='arc3,rad=0.1'  # Panah melengkung untuk menghindari tumpang tindih
+        alpha=edge_alpha,  
+        width=1.2,
+        edge_color='#666666',
+        arrowsize=15,
+        arrowstyle='-|>',
+        connectionstyle='arc3,rad=0.1'
     )
     
     # Node sizes dan colors berdasarkan centrality
-    # Gunakan skala logaritmik untuk size agar variasi lebih terlihat
     node_values = [centrality_metric[n] for n in G_sub.nodes()]
     vmin, vmax = min(node_values), max(node_values)
     
-    # Size dihitung agar tidak terlalu besar atau kecil
-    sizes = [2000 * (centrality_metric[n] - vmin) / (vmax - vmin) + 100 for n in G_sub.nodes()]
+    # For eigenvector, adjust sizes to prevent overlap
+    if metric_name == "Eigenvector":
+        # More differentiated sizes for eigenvector centrality
+        sizes = [1500 * (centrality_metric[n] - vmin) / (vmax - vmin) + 80 for n in G_sub.nodes()]
+    else:
+        sizes = [2000 * (centrality_metric[n] - vmin) / (vmax - vmin) + 100 for n in G_sub.nodes()]
     
     # Draw nodes
     nodes = nx.draw_networkx_nodes(
@@ -183,24 +191,39 @@ def plot_network(G, centrality_metric, metric_name, color_palette, top_n=100):
     # Tambahkan color bar
     plt.colorbar(nodes, label=f'{metric_name} Centrality', shrink=0.75)
     
-    # Draw labels hanya untuk top 15 nodes dengan font yang lebih jelas
-    top_15 = sorted(centrality_metric, key=centrality_metric.get, reverse=True)[:15]
-    labels = {n: n for n in G_sub.nodes() if n in top_15}
-    
-    nx.draw_networkx_labels(
-        G_sub, pos,
-        labels=labels,
-        font_size=10,
-        font_family='sans-serif',
-        font_weight='bold',
-        bbox=dict(facecolor='white', alpha=0.7, edgecolor='none', boxstyle='round,pad=0.3')
-    )
+    # Draw labels hanya untuk top nodes with adjusted parameters for eigenvector
+    if metric_name == "Eigenvector":
+        # For eigenvector, show fewer labels to reduce cluttering
+        top_labels = sorted(centrality_metric, key=centrality_metric.get, reverse=True)[:10]
+        labels = {n: n for n in G_sub.nodes() if n in top_labels}
+        
+        nx.draw_networkx_labels(
+            G_sub, pos,
+            labels=labels,
+            font_size=9,
+            font_family='sans-serif',
+            font_weight='bold',
+            bbox=dict(facecolor='white', alpha=0.8, edgecolor='none', boxstyle='round,pad=0.4')
+        )
+    else:
+        top_15 = sorted(centrality_metric, key=centrality_metric.get, reverse=True)[:15]
+        labels = {n: n for n in G_sub.nodes() if n in top_15}
+        
+        nx.draw_networkx_labels(
+            G_sub, pos,
+            labels=labels,
+            font_size=10,
+            font_family='sans-serif',
+            font_weight='bold',
+            bbox=dict(facecolor='white', alpha=0.7, edgecolor='none', boxstyle='round,pad=0.3')
+        )
     
     plt.title(f'{metric_name} Centrality Network', fontsize=16, fontweight='bold', pad=20)
     plt.axis('off')
     plt.tight_layout()
     
     return plt
+
 
 # Fungsi untuk menampilkan top nodes berdasarkan centrality
 def display_top_nodes(centrality_dict, metric_name, n=30):
