@@ -2,11 +2,11 @@ import streamlit as st
 import pandas as pd
 import networkx as nx
 import matplotlib.pyplot as plt
-import numpy as np
-from matplotlib.colors import LinearSegmentedColormap
-import os
 import plotly.graph_objects as go
 import plotly.express as px
+import numpy as np
+from PIL import Image
+import os
 
 # Konfigurasi halaman
 st.set_page_config(
@@ -16,280 +16,337 @@ st.set_page_config(
 )
 
 # Judul halaman
-st.title("🔍 RM3: Analisis Jaringan Sosial Program Stunting")
+st.title("🔍 Analisis Jaringan Sosial pada Media Sosial X tentang Program Stunting")
 
-# Penjelasan singkat
-with st.container():
-    st.markdown("""
-    ## Posisi dan Peran Aktor dalam Jaringan Sosial
-    
-    Halaman ini menyajikan hasil analisis jaringan sosial (Social Network Analysis/SNA) yang terbentuk dari percakapan 
-    mengenai program stunting di media sosial X. Analisis ini membantu mengidentifikasi aktor-aktor kunci dan 
-    pola interaksi dalam diskusi seputar program stunting di Indonesia.
-    """)
+# Deskripsi halaman
+st.markdown("""
+## Rumusan Masalah 3
+**Menganalisis posisi dan peran aktor dalam jaringan sosial yang terbentuk dari percakapan mengenai program stunting di media sosial X**
+
+Halaman ini menampilkan hasil analisis jaringan sosial (Social Network Analysis/SNA) untuk mengidentifikasi aktor-aktor 
+kunci dalam percakapan mengenai program stunting di media sosial X. Analisis ini membantu memahami pola interaksi, 
+pengaruh, dan peran berbagai aktor dalam diskusi publik tentang program stunting.
+""")
 
 # Fungsi untuk memuat data
 @st.cache_data
 def load_data():
     try:
-        # Path dapat disesuaikan sesuai kebutuhan
-        data_path = "data/data_gephi2_5April2025.csv"
-        if os.path.exists(data_path):
-            df = pd.read_csv(data_path)
-        else:
-            # Data dummy jika file tidak tersedia
-            df = pd.DataFrame({
-                "Source": ["user1", "user2", "user3", "user1", "user4"] * 10,
-                "Target": ["user2", "user3", "user4", "user5", "user1"] * 10
-            })
-        return df
-    except Exception as e:
-        st.error(f"Error loading data: {e}")
-        return pd.DataFrame({"Source": [], "Target": []})
+        # Coba membaca dari path relatif terlebih dahulu
+        df = pd.read_csv("data/db_merge_with_sentiment_21feb_drop.csv")
+    except FileNotFoundError:
+        # Jika tidak ditemukan, tampilkan pesan error
+        st.error("File data tidak ditemukan. Mohon cek lokasi file data.")
+        df = pd.DataFrame()  # Return DataFrame kosong
+    return df
 
-# Fungsi untuk membuat graph
-def create_graph(df):
+# Fungsi untuk membangun jaringan dari dataframe
+@st.cache_data
+def build_network(df):
+    # Extract username dan in_reply_to_screen_name untuk membuat jaringan
+    db_sna = df[["username", "in_reply_to_screen_name"]]
+    
+    # Membuat directed graph
     G = nx.DiGraph()
-    for _, row in df.iterrows():
-        G.add_edge(row["Source"], row["Target"])
+    
+    # Menambahkan edge ke graf berdasarkan data
+    for index, row in db_sna.iterrows():
+        G.add_edge(row["username"], row["in_reply_to_screen_name"])
+    
+    # Menghapus self-loops
+    G.remove_edges_from(nx.selfloop_edges(G))
+    
     return G
 
-# Fungsi untuk menghitung centrality dan top nodes
-def calculate_centrality(G, centrality_type, top_n=50):
-    if centrality_type == "degree":
-        centrality = nx.degree_centrality(G)
-    elif centrality_type == "betweenness":
-        centrality = nx.betweenness_centrality(G)
-    elif centrality_type == "closeness":
-        centrality = nx.closeness_centrality(G)
-    elif centrality_type == "eigenvector":
-        # Convert to undirected for eigenvector centrality if it's a directed graph
-        if nx.is_directed(G):
-            G_und = G.to_undirected()
-            centrality = nx.eigenvector_centrality(G_und, max_iter=1000, tol=1e-06)
-        else:
-            centrality = nx.eigenvector_centrality(G, max_iter=1000, tol=1e-06)
-    else:
-        raise ValueError(f"Unsupported centrality type: {centrality_type}")
+# Fungsi untuk menghitung centrality metrics
+@st.cache_data
+def calculate_centrality(G):
+    # Menghitung berbagai centrality metrics
+    degree_centrality = nx.degree_centrality(G)
+    betweenness_centrality = nx.betweenness_centrality(G)
+    closeness_centrality = nx.closeness_centrality(G)
     
-    # Get top N nodes by centrality
-    top_nodes = sorted(centrality.items(), key=lambda x: x[1], reverse=True)[:top_n]
-    return centrality, top_nodes
+    # Untuk eigenvector centrality, convert ke undirected graph
+    G_und = G.to_undirected()
+    eigenvector_centrality = nx.eigenvector_centrality(G_und, max_iter=1000, tol=1e-06)
+    
+    return {
+        "degree": degree_centrality,
+        "betweenness": betweenness_centrality,
+        "closeness": closeness_centrality,
+        "eigenvector": eigenvector_centrality
+    }
 
-# Fungsi untuk visualisasi jaringan dengan NetworkX
-def visualize_network(G, centrality, top_n=150, cmap_name="Blues", title="Network Visualization"):
-    # Create a copy of the graph and remove self-loops
-    G_clean = G.copy()
-    G_clean.remove_edges_from(nx.selfloop_edges(G_clean))
+# Fungsi untuk membuat visualisasi jaringan
+def plot_network(G, centrality_metric, metric_name, color_map, top_n=150):
+    # Pilih top N nodes berdasarkan centrality metric
+    top_nodes = sorted(centrality_metric, key=centrality_metric.get, reverse=True)[:top_n]
     
-    # Get top N nodes by centrality
-    top_nodes = sorted(centrality, key=centrality.get, reverse=True)[:top_n]
-    
-    # Create subgraph of top nodes
-    G_sub = G_clean.subgraph(top_nodes).copy()
+    # Buat subgraph hanya dengan top nodes
+    G_sub = G.subgraph(top_nodes).copy()
     
     # Compute layout
     pos = nx.spring_layout(G_sub, k=1.0, iterations=200, seed=42)
     
-    # Setup figure and node attributes
-    fig, ax = plt.subplots(figsize=(12, 10))
-    sizes = [centrality[n]*3000 for n in G_sub.nodes()]
-    colors = [centrality[n] for n in G_sub.nodes()]
+    # Plot
+    plt.figure(figsize=(12, 10))
     
-    # Draw nodes and edges
-    nx.draw_networkx_nodes(G_sub, pos,
-                          node_size=sizes,
-                          node_color=colors,
-                          cmap=plt.cm.get_cmap(cmap_name),
-                          alpha=0.9,
-                          ax=ax)
-    nx.draw_networkx_edges(G_sub, pos,
-                          alpha=0.4, width=1,
-                          ax=ax)
+    # Node sizes dan colors berdasarkan centrality
+    sizes = [centrality_metric[n]*3000 for n in G_sub.nodes()]
+    colors = [centrality_metric[n] for n in G_sub.nodes()]
     
-    # Label only top 30 nodes
-    labels = {n: n for n in top_nodes[:30]}
-    nx.draw_networkx_labels(G_sub, pos,
-                           labels=labels,
-                           font_size=10,
-                           font_color="black",
-                           ax=ax)
+    # Draw nodes
+    nx.draw_networkx_nodes(
+        G_sub, pos,
+        node_size=sizes,
+        node_color=colors,
+        cmap=color_map,
+        alpha=0.9
+    )
     
-    plt.title(title, fontsize=16)
+    # Draw edges
+    nx.draw_networkx_edges(
+        G_sub, pos,
+        alpha=0.4, width=1
+    )
+    
+    # Draw labels untuk top 30 nodes
+    label_count = 30
+    labels = {n: n for n in top_nodes[:label_count]}
+    nx.draw_networkx_labels(
+        G_sub, pos,
+        labels=labels,
+        font_size=12,
+        font_color="black"
+    )
+    
+    plt.title(f'{metric_name} Centrality – Top {top_n}', fontsize=20)
     plt.axis('off')
     plt.tight_layout()
-    return fig
-
-# Fungsi untuk visualisasi top nodes dengan Plotly
-def visualize_top_nodes(top_nodes, title="Top Nodes by Centrality"):
-    df = pd.DataFrame(top_nodes, columns=['Node', 'Centrality'])
-    fig = px.bar(
-        df, 
-        x='Centrality', 
-        y='Node', 
-        orientation='h',
-        title=title,
-        labels={'Centrality': 'Centrality Value', 'Node': 'Username'},
-        height=500
-    )
-    fig.update_layout(yaxis={'categoryorder': 'total ascending'})
-    return fig
-
-# Load data
-df = load_data()
-
-# Create graph
-G = create_graph(df)
-
-# Basic network stats
-st.header("Statistik Jaringan")
-col1, col2, col3, col4 = st.columns(4)
-with col1:
-    st.metric("Jumlah Nodes", f"{G.number_of_nodes():,}")
-with col2:
-    st.metric("Jumlah Edges", f"{G.number_of_edges():,}")
-with col3:
-    st.metric("Kepadatan Jaringan", f"{nx.density(G):.4f}")
-with col4:
-    st.metric("Komponen Terhubung", f"{nx.number_weakly_connected_components(G)}")
-
-# Centrality Analysis
-st.header("Analisis Centralitas")
-
-# Centrality type selector
-centrality_type = st.selectbox(
-    "Pilih Jenis Centralitas",
-    ["degree", "betweenness", "closeness", "eigenvector"],
-    format_func=lambda x: {
-        "degree": "Degree Centrality", 
-        "betweenness": "Betweenness Centrality",
-        "closeness": "Closeness Centrality", 
-        "eigenvector": "Eigenvector Centrality"
-    }[x]
-)
-
-# Calculate selected centrality
-centrality, top_nodes = calculate_centrality(G, centrality_type)
-
-# Explanation of centrality measure
-centrality_explanations = {
-    "degree": """
-    **Degree Centrality** mengukur jumlah koneksi langsung yang dimiliki oleh suatu node. 
-    Node dengan degree centrality tinggi menunjukkan aktor yang aktif berinteraksi dengan banyak aktor lain dalam diskusi program stunting.
-    """,
     
-    "betweenness": """
-    **Betweenness Centrality** mengukur seberapa sering suatu node berada di jalur terpendek antar dua node lainnya.
-    Node dengan betweenness centrality tinggi berperan sebagai penghubung atau jembatan informasi dalam jaringan diskusi stunting.
-    """,
+    return plt
+
+# Fungsi untuk menampilkan top nodes berdasarkan centrality
+def display_top_nodes(centrality_dict, metric_name, n=50):
+    # Sort nodes berdasarkan centrality value
+    sorted_nodes = sorted(centrality_dict.items(), key=lambda x: x[1], reverse=True)
     
-    "closeness": """
-    **Closeness Centrality** mengukur seberapa dekat suatu node dengan semua node lainnya dalam jaringan.
-    Node dengan closeness centrality tinggi dapat menyebarkan informasi dengan cepat ke seluruh jaringan diskusi stunting.
-    """,
+    # Convert ke DataFrame
+    df = pd.DataFrame(sorted_nodes[:n], columns=['Node', f'{metric_name} Centrality'])
     
-    "eigenvector": """
-    **Eigenvector Centrality** mengukur pengaruh suatu node berdasarkan pentingnya node-node yang terhubung dengannya.
-    Node dengan eigenvector centrality tinggi terhubung dengan aktor-aktor penting lain dalam diskusi program stunting.
-    """
-}
+    return df
 
-st.markdown(centrality_explanations[centrality_type])
+# Memuat data
+db_merge = load_data()
 
-# Display the top nodes
-st.subheader(f"Top 50 Nodes berdasarkan {centrality_type.capitalize()} Centrality")
-
-# Create two columns for the visualization
-col1, col2 = st.columns([3, 2])
-
-with col1:
-    # Network visualization
-    cmap_dict = {
-        "degree": "Blues",
-        "betweenness": "Oranges",
-        "closeness": "Greens",
-        "eigenvector": "Purples"
-    }
+if not db_merge.empty:
+    # Tabs untuk berbagai analisis
+    tab1, tab2, tab3, tab4, tab5 = st.tabs([
+        "Overview Jaringan", 
+        "Degree Centrality", 
+        "Betweenness Centrality", 
+        "Closeness Centrality", 
+        "Eigenvector Centrality"
+    ])
     
-    title_dict = {
-        "degree": "Degree Centrality – Top 150",
-        "betweenness": "Betweenness Centrality – Top 150",
-        "closeness": "Closeness Centrality – Top 150",
-        "eigenvector": "Eigenvector Centrality – Top 150"
-    }
+    # Membangun jaringan
+    G = build_network(db_merge)
     
-    fig = visualize_network(
-        G, 
-        centrality, 
-        top_n=150, 
-        cmap_name=cmap_dict[centrality_type],
-        title=title_dict[centrality_type]
-    )
-    st.pyplot(fig)
-
-with col2:
-    # Bar chart of top nodes
-    bar_title = f"Top 20 Aktor berdasarkan {centrality_type.capitalize()} Centrality"
-    bar_fig = visualize_top_nodes(top_nodes[:20], title=bar_title)
-    st.plotly_chart(bar_fig, use_container_width=True)
-
-# Show data table
-st.subheader("Data Centralitas")
-df_centrality = pd.DataFrame(top_nodes, columns=['Node', f'{centrality_type.capitalize()} Centrality'])
-st.dataframe(df_centrality, use_container_width=True)
-
-# Analisis Peran Aktor
-st.header("Analisis Peran Aktor dalam Jaringan")
-
-st.markdown("""
-### Interpretasi Hasil Analisis
-
-Berdasarkan perhitungan centrality, kita dapat mengidentifikasi beberapa peran kunci dalam jaringan percakapan mengenai program stunting:
-
-1. **Influencers (Degree Centrality Tinggi)**
-   - Aktor dengan koneksi langsung terbanyak yang dapat memengaruhi banyak pihak dalam diskusi
-   - Berpotensi sebagai penyebar informasi dan opini tentang program stunting
-
-2. **Brokers (Betweenness Centrality Tinggi)**
-   - Aktor yang menjembatani kelompok-kelompok terpisah dalam diskusi
-   - Berperan penting dalam penyebaran informasi antar komunitas yang berbeda
-
-3. **Information Hubs (Closeness Centrality Tinggi)**
-   - Aktor yang dapat menjangkau seluruh jaringan dengan cepat
-   - Ideal untuk menyebarkan kampanye atau informasi program stunting secara efisien
-
-4. **Strategic Connectors (Eigenvector Centrality Tinggi)**
-   - Aktor yang terhubung dengan aktor-aktor penting lainnya
-   - Memiliki pengaruh strategis dalam membentuk narasi tentang program stunting
-""")
-
-st.markdown("---")
-
-# Conclusions
-st.header("Kesimpulan dan Rekomendasi")
-
-st.markdown("""
-### Temuan Utama
-
-1. Jaringan percakapan tentang program stunting di media sosial X menunjukkan struktur yang terpusat pada beberapa aktor kunci
-2. Terdapat aktor-aktor yang berperan sebagai influencer, broker informasi, dan penghubung strategis
-3. Pola interaksi menunjukkan adanya kelompok-kelompok diskusi yang terpisah namun terhubung melalui beberapa aktor penghubung
-
-### Rekomendasi untuk Program Stunting
-
-1. **Kolaborasi dengan Influencers**
-   - Melibatkan aktor dengan degree centrality tinggi dalam kampanye edukasi stunting
-
-2. **Penyebaran Informasi melalui Brokers**
-   - Memanfaatkan aktor dengan betweenness centrality tinggi untuk menjangkau komunitas yang berbeda
-
-3. **Peningkatan Respons melalui Information Hubs**
-   - Memprioritaskan komunikasi dengan aktor dengan closeness centrality tinggi untuk respons cepat
-
-4. **Pembentukan Narasi melalui Strategic Connectors**
-   - Bekerja sama dengan aktor yang memiliki eigenvector centrality tinggi untuk membentuk narasi positif tentang program stunting
-""")
-
-# Reference and Footer
-st.markdown("---")
-st.caption("Analisis Jaringan Sosial Program Stunting di Media Sosial X | Data diperbarui per April 2025")
+    # Menghitung centrality metrics
+    centrality_metrics = calculate_centrality(G)
+    
+    with tab1:
+        st.header("Overview Jaringan Sosial")
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.subheader("Statistik Jaringan")
+            st.markdown(f"""
+            - **Jumlah Nodes (Aktor)**: {G.number_of_nodes()}
+            - **Jumlah Edges (Interaksi)**: {G.number_of_edges()}
+            - **Rata-rata Degree**: {sum(dict(G.degree()).values()) / G.number_of_nodes():.2f}
+            - **Densitas Jaringan**: {nx.density(G):.5f}
+            """)
+            
+            st.subheader("Interpretasi")
+            st.markdown("""
+            Jaringan sosial yang terbentuk dari percakapan tentang program stunting menunjukkan beberapa karakteristik penting:
+            
+            1. **Aktor Kunci**: Terdapat beberapa aktor dengan pengaruh tinggi yang menjadi pusat diskusi
+            2. **Pola Interaksi**: Diskusi cenderung terkonsentrasi di sekitar aktor-aktor dengan centrality tinggi
+            3. **Aliran Informasi**: Informasi tentang program stunting menyebar melalui jalur-jalur tertentu dalam jaringan
+            """)
+        
+        with col2:
+            st.subheader("Tentang Analisis Jaringan Sosial")
+            st.markdown("""
+            **Social Network Analysis (SNA)** membantu kita memahami struktur relasi antar aktor dalam jaringan sosial.
+            Beberapa konsep penting dalam SNA:
+            
+            - **Centrality**: Mengukur posisi strategis aktor dalam jaringan
+            - **Degree**: Jumlah koneksi langsung yang dimiliki aktor
+            - **Betweenness**: Seberapa sering aktor menjadi 'jembatan' antar aktor lain
+            - **Closeness**: Seberapa dekat aktor dengan semua aktor lain di jaringan
+            - **Eigenvector**: Mengukur pengaruh aktor berdasarkan koneksinya dengan aktor berpengaruh lain
+            """)
+    
+    with tab2:
+        st.header("Degree Centrality")
+        st.markdown("""
+        **Degree Centrality** mengukur jumlah koneksi langsung yang dimiliki oleh setiap aktor dalam jaringan.
+        Aktor dengan degree centrality tinggi memiliki banyak interaksi langsung dan sering menjadi pusat diskusi.
+        """)
+        
+        # Visualisasi jaringan untuk degree centrality
+        col1, col2 = st.columns([2, 1])
+        
+        with col1:
+            fig_degree = plot_network(G, centrality_metrics["degree"], "Degree", plt.cm.Blues)
+            st.pyplot(fig_degree)
+        
+        with col2:
+            st.subheader("Top Aktor berdasarkan Degree Centrality")
+            df_degree = display_top_nodes(centrality_metrics["degree"], "Degree")
+            st.dataframe(df_degree, hide_index=True)
+            
+            st.subheader("Interpretasi")
+            st.markdown("""
+            Aktor dengan degree centrality tinggi:
+            - Memiliki banyak interaksi langsung
+            - Sering menjadi pusat diskusi
+            - Memiliki pengaruh langsung yang besar
+            - Berperan sebagai penyebar informasi utama
+            """)
+    
+    with tab3:
+        st.header("Betweenness Centrality")
+        st.markdown("""
+        **Betweenness Centrality** mengukur seberapa sering suatu aktor berada di jalur terpendek antara dua aktor lainnya.
+        Aktor dengan betweenness centrality tinggi berperan sebagai 'jembatan' atau perantara dalam jaringan dan memiliki
+        kontrol terhadap aliran informasi.
+        """)
+        
+        # Visualisasi jaringan untuk betweenness centrality
+        col1, col2 = st.columns([2, 1])
+        
+        with col1:
+            fig_betweenness = plot_network(G, centrality_metrics["betweenness"], "Betweenness", plt.cm.Oranges)
+            st.pyplot(fig_betweenness)
+        
+        with col2:
+            st.subheader("Top Aktor berdasarkan Betweenness Centrality")
+            df_betweenness = display_top_nodes(centrality_metrics["betweenness"], "Betweenness")
+            st.dataframe(df_betweenness, hide_index=True)
+            
+            st.subheader("Interpretasi")
+            st.markdown("""
+            Aktor dengan betweenness centrality tinggi:
+            - Menjadi perantara informasi
+            - Menghubungkan kelompok-kelompok berbeda
+            - Memiliki kontrol terhadap aliran informasi
+            - Penting untuk penyebaran program stunting antar komunitas
+            """)
+    
+    with tab4:
+        st.header("Closeness Centrality")
+        st.markdown("""
+        **Closeness Centrality** mengukur seberapa dekat suatu aktor dengan semua aktor lainnya dalam jaringan.
+        Aktor dengan closeness centrality tinggi dapat menyebarkan informasi dengan cepat karena memiliki jarak yang pendek
+        ke banyak aktor lain.
+        """)
+        
+        # Visualisasi jaringan untuk closeness centrality
+        col1, col2 = st.columns([2, 1])
+        
+        with col1:
+            fig_closeness = plot_network(G, centrality_metrics["closeness"], "Closeness", plt.cm.Greens)
+            st.pyplot(fig_closeness)
+        
+        with col2:
+            st.subheader("Top Aktor berdasarkan Closeness Centrality")
+            df_closeness = display_top_nodes(centrality_metrics["closeness"], "Closeness")
+            st.dataframe(df_closeness, hide_index=True)
+            
+            st.subheader("Interpretasi")
+            st.markdown("""
+            Aktor dengan closeness centrality tinggi:
+            - Dapat menjangkau banyak aktor dengan cepat
+            - Efisien dalam penyebaran informasi
+            - Memiliki akses ke sumber informasi beragam
+            - Strategis untuk kampanye program stunting
+            """)
+    
+    with tab5:
+        st.header("Eigenvector Centrality")
+        st.markdown("""
+        **Eigenvector Centrality** mengukur pengaruh suatu aktor berdasarkan pengaruh aktor lain yang terhubung dengannya.
+        Aktor dengan eigenvector centrality tinggi memiliki koneksi dengan aktor-aktor berpengaruh lainnya.
+        """)
+        
+        # Visualisasi jaringan untuk eigenvector centrality
+        col1, col2 = st.columns([2, 1])
+        
+        with col1:
+            fig_eigenvector = plot_network(G, centrality_metrics["eigenvector"], "Eigenvector", plt.cm.Purples)
+            st.pyplot(fig_eigenvector)
+        
+        with col2:
+            st.subheader("Top Aktor berdasarkan Eigenvector Centrality")
+            df_eigenvector = display_top_nodes(centrality_metrics["eigenvector"], "Eigenvector")
+            st.dataframe(df_eigenvector, hide_index=True)
+            
+            st.subheader("Interpretasi")
+            st.markdown("""
+            Aktor dengan eigenvector centrality tinggi:
+            - Terhubung dengan aktor-aktor penting
+            - Memiliki pengaruh tidak langsung yang besar
+            - Berperan sebagai opinion leader
+            - Strategis untuk kolaborasi dalam program stunting
+            """)
+    
+    # Kesimpulan dan rekomendasi
+    st.header("Kesimpulan dan Rekomendasi")
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.subheader("Kesimpulan")
+        st.markdown("""
+        1. **Struktur Jaringan**: Percakapan tentang program stunting membentuk jaringan dengan beberapa aktor kunci yang berperan sebagai pusat informasi dan penyebar diskusi.
+        
+        2. **Aktor Berpengaruh**: Terdapat perbedaan aktor berpengaruh berdasarkan metrik centrality yang berbeda, menunjukkan peran yang beragam dalam jaringan.
+        
+        3. **Pola Komunikasi**: Informasi tentang program stunting menyebar melalui jalur-jalur tertentu dengan aktor perantara yang memiliki peran strategis.
+        
+        4. **Kelompok Diskusi**: Terbentuk beberapa kelompok diskusi yang saling terhubung melalui aktor-aktor dengan betweenness centrality tinggi.
+        """)
+    
+    with col2:
+        st.subheader("Rekomendasi")
+        st.markdown("""
+        1. **Kerjasama dengan Aktor Kunci**: Melibatkan aktor-aktor dengan centrality tinggi dalam kampanye program stunting untuk meningkatkan jangkauan dan dampak.
+        
+        2. **Strategi Komunikasi Bertarget**: Mengembangkan strategi komunikasi yang berbeda untuk setiap jenis aktor berdasarkan perannya dalam jaringan.
+        
+        3. **Penguatan Jaringan**: Meningkatkan konektivitas antar kelompok diskusi untuk memastikan informasi program stunting menyebar secara merata.
+        
+        4. **Monitoring Percakapan**: Melakukan pemantauan berkelanjutan terhadap percakapan program stunting di media sosial untuk mengidentifikasi perubahan pola dan aktor berpengaruh.
+        """)
+    
+    # Metodologi
+    st.header("Metodologi")
+    st.markdown("""
+    **Analisis Jaringan Sosial (Social Network Analysis)** dilakukan dengan langkah-langkah berikut:
+    
+    1. **Pengumpulan Data**: Data percakapan tentang program stunting dikumpulkan dari media sosial X.
+    
+    2. **Pemodelan Jaringan**: Interaksi antar pengguna dimodelkan sebagai directed graph, dengan username sebagai nodes dan reply sebagai edges.
+    
+    3. **Analisis Centrality**: Berbagai metrik centrality (degree, betweenness, closeness, eigenvector) dihitung untuk mengidentifikasi aktor-aktor kunci.
+    
+    4. **Visualisasi**: Jaringan divisualisasikan dengan ukuran node proporsional terhadap nilai centrality untuk memudahkan interpretasi.
+    
+    5. **Interpretasi**: Hasil analisis diinterpretasikan untuk mengidentifikasi peran dan posisi aktor dalam jaringan serta pola aliran informasi.
+    """)
+    
+else:
+    st.warning("Data tidak tersedia. Pastikan file data telah tersedia di lokasi yang benar.")
