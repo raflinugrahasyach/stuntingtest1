@@ -83,7 +83,7 @@ with tab1:
     
     col1, col2, col3 = st.columns([1, 3, 1])
     with col2:
-        st.image("https://via.placeholder.com/800x400?text=Stunting+sebagai+masalah+kesehatan", 
+        st.image("images/latbel1.png", 
                 caption="Latar Belakang: Stunting sebagai masalah kesehatan yang memengaruhi kualitas SDM", 
                 use_container_width=True)
     
@@ -102,7 +102,7 @@ with tab1:
     
     col1, col2, col3 = st.columns([1, 3, 1])
     with col2:
-        st.image("https://via.placeholder.com/800x400?text=Target+Penurunan+Stunting", 
+        st.image("images/latbel2.png", 
                 caption="Latar Belakang: Target penurunan stunting oleh pemerintah", 
                 use_container_width=True)
     
@@ -113,7 +113,7 @@ with tab1:
     
     col1, col2, col3 = st.columns([1, 3, 1])
     with col2:
-        st.image("https://via.placeholder.com/800x400?text=Peran+Twitter+dalam+Opini+Publik", 
+        st.image("images/latbel3.png", 
                 caption="Latar Belakang: Peran Twitter dalam membentuk opini publik", 
                 use_container_width=True)
     
@@ -217,17 +217,17 @@ with tab4:
         """, unsafe_allow_html=True)
         
     with col2:
-        st.image("https://via.placeholder.com/500x300?text=Metodologi+Pengumpulan+Data", 
-                 caption="Metodologi Penelitian: Pengumpulan Data", 
+        st.image("images/flow1.png", 
+                 caption="Flowchart Metodologi Penelitian", 
                  use_container_width=True)
     
-    # FLOWCHART UTAMA
-    st.markdown("<div class='sub-header'>Flowchart Metodologi Penelitian</div>", unsafe_allow_html=True)
+    # FLOWCHART ANALISIS SENTIMEN
+    st.markdown("<div class='sub-header'>Flowchart Analisis Sentimen</div>", unsafe_allow_html=True)
     
     col1, col2, col3 = st.columns([1, 3, 1])
     with col2:
-        st.image("https://via.placeholder.com/500x700?text=Flowchart+Metodologi+Penelitian", 
-                 caption="Flowchart Metodologi Penelitian", 
+        st.image("images/flow3.png", 
+                 caption="Flowchart Analisis Sentimen", 
                  use_container_width=True)
     
     # TEXT PREPROCESSING & LABELING
@@ -235,7 +235,7 @@ with tab4:
     
     col1, col2, col3 = st.columns([1, 3, 1])
     with col2:
-        st.image("https://via.placeholder.com/800x400?text=Flowchart+Text+Preprocessing+dan+Labeling+Data", 
+        st.image("images/flow2.png", 
                  caption="Metodologi: Text Preprocessing & Labeling Data", 
                  use_container_width=True)
     
@@ -245,12 +245,12 @@ with tab4:
     col1, col2 = st.columns(2)
     
     with col1:
-        st.image("https://via.placeholder.com/500x700?text=Flowchart+Klasifikasi+Sentimen", 
+        st.image("images/flow4.png", 
                  caption="Metodologi: Flowchart Klasifikasi Sentimen", 
                  use_container_width=True)
     
     with col2:
-        st.image("https://via.placeholder.com/500x700?text=Flowchart+Analisis+Jaringan+Sosial", 
+        st.image("images/flow5.png", 
                  caption="Metodologi: Flowchart Analisis Jaringan Sosial", 
                  use_container_width=True)
     
