@@ -90,7 +90,7 @@ def train_models(db_merge):
     results = {}
     
     # Train and evaluate BERT models
-    # GBDT
+    # Model GBDT
     gbdt_model = GradientBoostingClassifier()
     gbdt_model.fit(X_train_vectorized_bert, y_train_bert)
     gbdt_pred = gbdt_model.predict(X_test_vectorized_bert)
