@@ -12,6 +12,7 @@ from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.svm import SVC
 from xgboost import XGBClassifier
 import nltk
+nltk.download('stopwords') 
 from nltk.corpus import stopwords
 
 # Konfigurasi halaman
