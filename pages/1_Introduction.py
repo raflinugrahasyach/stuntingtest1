@@ -75,10 +75,9 @@ tab1, tab2, tab3, tab4, tab5 = st.tabs([
 ])
 
 with tab1:
-    # LATAR BELAKANG 1 - MASALAH KESEHATAN
+    # LATAR BELAKANG 1
     st.markdown("<div class='section-header'>Latar Belakang</div>", unsafe_allow_html=True)
     
-    # Placeholder untuk gambar pertama (Latar Belakang 1)
     st.markdown("<p class='content-text'><strong>Stunting tetap menjadi masalah kesehatan yang memengaruhi kualitas SDM masa depan.</strong></p>", unsafe_allow_html=True)
     
     col1, col2, col3 = st.columns([1, 3, 1])
@@ -95,7 +94,7 @@ with tab1:
     </div>
     """, unsafe_allow_html=True)
     
-    # LATAR BELAKANG 2 - TARGET PEMERINTAH
+    # LATAR BELAKANG 2
     st.markdown("<hr>", unsafe_allow_html=True)
     
     st.markdown("<p class='content-text'><strong>Pemerintah menargetkan penurunan stunting dari 21.6% pada 2022 menjadi 14% pada 2024 (Muhaimin et al., 2023).</strong></p>", unsafe_allow_html=True)
@@ -106,7 +105,7 @@ with tab1:
                 caption="Latar Belakang: Target penurunan stunting oleh pemerintah", 
                 use_container_width=True)
     
-    # LATAR BELAKANG 3 - PERAN TWITTER
+    # LATAR BELAKANG 3
     st.markdown("<hr>", unsafe_allow_html=True)
     
     st.markdown("<p class='content-text'><strong>Twitter berperan penting dalam membentuk opini publik tentang kesehatan dan stunting (Inayah & Purba, 2020).</strong></p>", unsafe_allow_html=True)
@@ -190,7 +189,7 @@ with tab3:
 with tab4:
     st.markdown("<div class='section-header'>Metodologi Penelitian</div>", unsafe_allow_html=True)
     
-    # METODOLOGI - PENGUMPULAN DATA
+    # METODOLOGI
     st.markdown("<div class='sub-header'>Pengumpulan Data</div>", unsafe_allow_html=True)
     
     col1, col2 = st.columns([3, 2])
@@ -258,7 +257,7 @@ with tab5:
     st.markdown("<div class='section-header'>Data Sampel</div>", unsafe_allow_html=True)
     
     try:
-        # Membaca data aktual (jika ada)
+        # Membaca data
         df = pd.read_csv('data/db_merge_with_sentiment_24apr.csv')
         
         # Menampilkan 5 data teratas
@@ -270,7 +269,7 @@ with tab5:
         col1, col2 = st.columns(2)
         
         with col1:
-            # Jika BERT_Label ada dalam dataset
+            
             if 'BERT_Label' in df.columns:
                 bert_counts = df['BERT_Label'].value_counts()
                 
@@ -284,7 +283,7 @@ with tab5:
                 st.warning("Kolom BERT_Label tidak ditemukan dalam dataset")
         
         with col2:
-            # Jika VADER_Label ada dalam dataset
+            
             if 'VADER_Label' in df.columns:
                 vader_counts = df['VADER_Label'].value_counts()
                 
@@ -298,7 +297,7 @@ with tab5:
                 st.warning("Kolom VADER_Label tidak ditemukan dalam dataset")
     
     except FileNotFoundError:
-        st.error("File data/db_merge_with_sentiment_24apr.csv tidak ditemukan.")
+        st.error("File data tidak ditemukan.")
         
         # Menggunakan data sampel sebagai fallback
         st.markdown("<div class='sub-header'>Menggunakan data sampel:</div>", unsafe_allow_html=True)
@@ -344,14 +343,3 @@ with tab5:
             ax.axis('equal')
             
             st.pyplot(fig)
-
-# Tambahkan informasi mengenai pengembangan aplikasi streamlit
-st.markdown("<hr>", unsafe_allow_html=True)
-st.markdown("""
-<div class='content-text'>
-<h3>Tentang Halaman Introduction</h3>
-
-<p>Halaman ini memberikan gambaran umum tentang penelitian analisis sentimen terhadap program stunting di Indonesia.
-Navigasikan ke halaman selanjutnya untuk melihat hasil analisis berdasarkan rumusan masalah.</p>
-</div>
-""", unsafe_allow_html=True)

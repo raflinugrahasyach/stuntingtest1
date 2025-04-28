@@ -9,14 +9,13 @@ import plotly.graph_objects as go
 from collections import Counter
 import ast
 
-# Konfigurasi halaman
 st.set_page_config(
     page_title="Analisis Sentimen Program Stunting",
     page_icon="📊",
     layout="wide"
 )
 
-# Fungsi untuk load data (ganti dengan path yang sesuai)
+# Load data
 @st.cache_data
 def load_data():
     try:
@@ -48,17 +47,14 @@ st.markdown("""
 # Load data
 df = load_data()
 
-# Cek apakah data berhasil dimuat
 if df.empty:
-    st.warning("Data tidak tersedia. Silakan periksa file sumber data.")
+    st.warning("Data tidak tersedia")
 else:
-    # Tab untuk berbagai visualisasi
     tab1, tab2, tab3, tab4 = st.tabs(["Distribusi Sentimen", "WordCloud", "Kata Teratas", "Data Sampel"])
     
     with tab1:
         st.header("Distribusi Sentimen")
         
-        # Membuat layout 2 kolom
         col1, col2 = st.columns(2)
         
         with col1:
@@ -140,7 +136,7 @@ else:
     with tab2:
         st.header("WordCloud Berdasarkan Sentimen")
         
-        # Fungsi untuk membersihkan teks
+        # Text Cleaning
         def clean_text(text):
             if isinstance(text, list):
                 text = ' '.join(text)
@@ -157,7 +153,6 @@ else:
         
         label_column = 'BERT_Label' if sentiment_method == 'BERT' else 'VADER_Label'
         
-        # Buat layout 3 kolom untuk wordcloud
         wcol1, wcol2, wcol3 = st.columns(3)
         
         # Proses wordcloud untuk masing-masing sentimen
@@ -166,7 +161,6 @@ else:
             filtered_data = df[df[label_column] == sentiment]['Stemmed_Text']
             
             if len(filtered_data) > 0:
-                # Gabungkan semua teks
                 combined_text = ' '.join(filtered_data.apply(clean_text))
                 
                 # Buat wordcloud
@@ -207,57 +201,45 @@ else:
         
         label_column = 'BERT_Label' if sentiment_method_tab3 == 'BERT' else 'VADER_Label'
         
-        # Function to get top-N tokens per label
         def top_tokens(df, label_col, n=10):
             topn = {}
             for label in df[label_col].unique():
-                # Get all tokens for this label, flattening the lists
                 all_tokens = []
                 for tokens in df[df[label_col] == label]['Stemmed_Text']:
                     if isinstance(tokens, list):
                         all_tokens.extend(tokens)
                     elif isinstance(tokens, str) and tokens.startswith('['):
                         try:
-                            # Try to parse as list
                             parsed = ast.literal_eval(tokens)
                             if isinstance(parsed, list):
                                 all_tokens.extend(parsed)
                         except:
-                            # If parsing fails, split by spaces
                             all_tokens.extend(tokens.split())
                     else:
-                        # If it's just a string, split by spaces
                         all_tokens.extend(str(tokens).split())
                 
                 # Count occurrences and get top n
                 topn[label] = Counter(all_tokens).most_common(n)
             return topn
         
-        # Calculate top tokens
         top_n = st.slider("Pilih jumlah kata teratas:", min_value=5, max_value=20, value=10)
         top_tokens_data = top_tokens(df, label_column, n=top_n)
         
-        # Buat layout untuk menampilkan visualisasi
         vis_col1, vis_col2, vis_col3 = st.columns(3)
         
-        # Untuk setiap sentimen, tampilkan bar chart kata teratas
         for sentiment, col in zip(['positive', 'neutral', 'negative'], [vis_col1, vis_col2, vis_col3]):
             if sentiment in top_tokens_data:
-                # Extract tokens and counts
                 tokens, counts = zip(*top_tokens_data[sentiment]) if top_tokens_data[sentiment] else ([], [])
                 
                 if tokens:
-                    # Create bar chart
                     with col:
                         st.subheader(f"Sentimen {sentiment.capitalize()}")
                         
-                        # Create a dataframe for plotting
                         top_df = pd.DataFrame({
                             'Token': tokens,
                             'Frekuensi': counts
                         })
                         
-                        # Horizontal bar chart with Plotly
                         fig = px.bar(
                             top_df,
                             x='Frekuensi',
@@ -283,16 +265,13 @@ else:
         filter_options = ['Semua'] + sorted(df['BERT_Label'].unique().tolist())
         selected_filter = st.selectbox('Filter berdasarkan sentimen BERT:', filter_options)
         
-        # Filter data berdasarkan pilihan
         if selected_filter != 'Semua':
             filtered_df = df[df['BERT_Label'] == selected_filter]
         else:
             filtered_df = df
         
-        # Menentukan kolom yang akan ditampilkan
         display_columns = ['username', 'full_text', 'BERT_Label', 'VADER_Label']
         
-        # Menampilkan data
         st.dataframe(
             filtered_df[display_columns],
             column_config={
@@ -305,7 +284,6 @@ else:
             hide_index=True
         )
         
-        # Menampilkan ringkasan statistik
         st.subheader("Ringkasan Data")
         
         # Perbandingan label BERT dan VADER
@@ -321,7 +299,3 @@ else:
             title="Matriks Perbandingan Label BERT dan VADER"
         )
         st.plotly_chart(fig, use_container_width=True)
-
-# Footer
-st.markdown("---")
-st.caption("Analisis Sentimen dan Jaringan Sosial pada Media Sosial X untuk Menilai Persepsi Publik terhadap Program Stunting di Indonesia")
