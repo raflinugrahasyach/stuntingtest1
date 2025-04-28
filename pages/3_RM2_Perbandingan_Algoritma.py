@@ -11,6 +11,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.svm import SVC
 from xgboost import XGBClassifier
+import nltk
 from nltk.corpus import stopwords
 
 # Konfigurasi halaman
