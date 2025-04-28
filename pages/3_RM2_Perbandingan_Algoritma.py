@@ -42,7 +42,7 @@ Kita membandingkan performa ketiga algoritma dengan menggunakan dua metode anali
 def load_data():
     # Load data here
     try:
-        file_path = 'db_merge_with_sentiment_24apr.csv'
+        file_path = 'data/db_merge_with_sentiment_24apr.csv'
         db_merge = pd.read_csv(file_path)
         return db_merge
     except FileNotFoundError:
