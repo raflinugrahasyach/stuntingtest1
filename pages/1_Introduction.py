@@ -217,7 +217,7 @@ with tab4:
         """, unsafe_allow_html=True)
         
     with col2:
-        st.image("images/flow1.png", 
+        st.image("images/Flowchart Metodologi Penelitian.drawio.png", 
                  caption="Flowchart Metodologi Penelitian", 
                  use_container_width=True)
     
@@ -226,7 +226,7 @@ with tab4:
     
     col1, col2, col3 = st.columns([1, 3, 1])
     with col2:
-        st.image("images/flow3.png", 
+        st.image("images/Flowchart Analisis Sentimen.drawio.png", 
                  caption="Flowchart Analisis Sentimen", 
                  use_container_width=True)
     
@@ -235,8 +235,8 @@ with tab4:
     
     col1, col2, col3 = st.columns([1, 3, 1])
     with col2:
-        st.image("images/flow2.png", 
-                 caption="Metodologi: Text Preprocessing & Labeling Data", 
+        st.image("images/Flowchart Text Preprocessing and Labeling.jpg", 
+                 caption="Text Preprocessing & Labeling Data", 
                  use_container_width=True)
     
     # ANALISIS SENTIMEN & JARINGAN SOSIAL
@@ -245,13 +245,13 @@ with tab4:
     col1, col2 = st.columns(2)
     
     with col1:
-        st.image("images/flow4.png", 
-                 caption="Metodologi: Flowchart Klasifikasi Sentimen", 
+        st.image("images/Flowchart Klasifikasi Sentimen.drawio.png", 
+                 caption="Flowchart Klasifikasi Sentimen", 
                  use_container_width=True)
     
     with col2:
-        st.image("images/flow5.png", 
-                 caption="Metodologi: Flowchart Analisis Jaringan Sosial", 
+        st.image("images/Flowchart Analisis Jaringan Sosial.drawio.png", 
+                 caption="Flowchart Analisis Jaringan Sosial", 
                  use_container_width=True)
     
 with tab5:
