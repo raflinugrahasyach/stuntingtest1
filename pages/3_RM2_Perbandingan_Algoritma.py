@@ -31,7 +31,7 @@ Kita membandingkan performa ketiga algoritma dengan menggunakan dua metode anali
 """)
 
 # Data dari laporan
-# Menggunakan data riil dari laporan
+# Menggunakan data real dari Laporan Analisis
 models = ['GBDT', 'SVC', 'XGBoost']
 
 # Metrics from the report
@@ -343,13 +343,6 @@ with tab2:
         Gradient Boosting adalah teknik machine learning yang digunakan untuk membuat model prediktif. GBDT secara khusus menggunakan decision tree sebagai learner dasar. 
         Algoritma ini membangun model secara bertahap (iteratif), dengan setiap iterasi mencoba memperbaiki kesalahan dari iterasi sebelumnya.
         
-        **Parameter yang digunakan:**
-        - n_estimators: 100
-        - learning_rate: 0.1
-        - max_depth: 3
-        - subsample: 1.0
-        - criterion: 'friedman_mse'
-        
         **Cara Kerja:**
         1. Memulai dengan model sederhana (biasanya satu node tree)
         2. Mengidentifikasi "residual" atau kesalahan dari model
@@ -357,19 +350,8 @@ with tab2:
         4. Menambahkan tree baru ke model untuk mengurangi kesalahan
         5. Mengulangi proses hingga mencapai jumlah iterasi yang ditentukan
         
-        **Kelebihan:**
-        - Akurasi tinggi dan mampu menangani berbagai jenis data
-        - Dapat menangani interaksi fitur secara alami
-        - Mampu menangani data yang tidak seimbang
-        - Tahan terhadap outlier
-        
-        **Kelemahan:**
-        - Waktu pelatihan relatif lama
-        - Risiko overfitting jika parameter tidak diatur dengan tepat
-        - Membutuhkan lebih banyak tuning parameter dibanding algoritma lain
         """)
         
-        st.markdown("**Durasi pelatihan:** 27 detik (BERT), 18 detik (VADER)")
         
     elif selected_algo == "Support Vector Classifier (SVC)":
         st.subheader("Support Vector Classifier (SVC)")
@@ -378,12 +360,6 @@ with tab2:
         Support Vector Classifier (SVC) adalah implementasi dari Support Vector Machine (SVM) untuk klasifikasi. SVC mencari hyperplane terbaik 
         yang memisahkan data dari kelas yang berbeda dengan margin maksimal.
         
-        **Parameter yang digunakan:**
-        - kernel: 'rbf'
-        - C: 1.0
-        - gamma: 'scale'
-        - decision_function_shape: 'ovr' (one-vs-rest)
-        - probability: True
         
         **Cara Kerja:**
         1. Mentransformasikan data ke dimensi yang lebih tinggi menggunakan kernel
@@ -391,17 +367,6 @@ with tab2:
         3. Mengidentifikasi "support vectors" - titik data yang paling dekat dengan hyperplane
         4. Membuat keputusan klasifikasi berdasarkan posisi relatif terhadap hyperplane
         
-        **Kelebihan:**
-        - Efektif pada ruang berdimensi tinggi
-        - Bekerja baik ketika jumlah dimensi lebih besar dari jumlah sampel
-        - Memori efisien karena hanya menggunakan subset poin data (support vectors)
-        - Kuat secara teoritis dan cenderung menghindari overfitting
-        
-        **Kelemahan:**
-        - Tidak cocok untuk dataset besar (pelatihan lambat)
-        - Kurang bekerja baik jika kelas sangat tumpang tindih
-        - Pemilihan kernel dan parameter yang tepat penting
-        - Kinerjanya menurun dengan dataset yang memiliki noise tinggi
         """)
         
         st.markdown("**Durasi pelatihan:** 19 detik (BERT), 14 detik (VADER)")
@@ -413,15 +378,6 @@ with tab2:
         XGBoost adalah implementasi teroptimasi dari algoritma Gradient Boosting. Dikenal karena kecepatan dan performa yang unggul,
         XGBoost telah menjadi salah satu algoritma yang paling populer dalam kompetisi machine learning.
         
-        **Parameter yang digunakan:**
-        - n_estimators: 100
-        - learning_rate: 0.1
-        - max_depth: 3
-        - subsample: 0.8
-        - colsample_bytree: 0.8
-        - objective: 'multi:softprob'
-        - eval_metric: 'mlogloss'
-        
         **Cara Kerja:**
         1. Menggunakan prinsip gradient boosting seperti GBDT
         2. Menambahkan regularisasi untuk mengurangi overfitting
@@ -429,17 +385,6 @@ with tab2:
         4. Menangani nilai yang hilang secara otomatis
         5. Menggunakan teknik "pruning" untuk menghilangkan split yang tidak signifikan
         
-        **Kelebihan:**
-        - Kinerja yang sangat baik pada berbagai jenis data
-        - Kecepatan eksekusi yang cepat dan efisien
-        - Fitur regularisasi built-in untuk mengurangi overfitting
-        - Penanganan nilai yang hilang secara otomatis
-        - Paralelisasi yang efisien
-        
-        **Kelemahan:**
-        - Memerlukan lebih banyak tuning parameter dibanding model yang lebih sederhana
-        - Dapat overfitting pada dataset kecil jika tidak diatur dengan baik
-        - Membutuhkan lebih banyak memori dibanding algoritma gradient boosting lainnya
         """)
         
         st.markdown("**Durasi pelatihan:** 28 detik (BERT), 26 detik (VADER)")
