@@ -47,6 +47,12 @@ st.markdown("""
         font-weight: 600;
         color: #1E40AF;
     }
+    .gephi-viz {
+        border: 1px solid #E2E8F0;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -121,109 +127,8 @@ def calculate_centrality(G):
         "eigenvector": eigenvector_centrality
     }
 
-# Fungsi untuk membuat visualisasi jaringan yang lebih rapi dengan panah yang lebih jelas
-def plot_network(G, centrality_metric, metric_name, color_palette, top_n=100):
-    # Pilih top N nodes berdasarkan centrality metric
-    top_nodes = sorted(centrality_metric, key=centrality_metric.get, reverse=True)[:top_n]
-    
-    # Buat subgraph hanya dengan top nodes
-    G_sub = G.subgraph(top_nodes).copy()
-    
-    # Custom color map
-    if color_palette == "blue":
-        cmap = LinearSegmentedColormap.from_list("custom_blue", ["#BBDEFB", "#1976D2", "#0D47A1"])
-    elif color_palette == "green":
-        cmap = LinearSegmentedColormap.from_list("custom_green", ["#C8E6C9", "#4CAF50", "#1B5E20"])
-    elif color_palette == "orange":
-        cmap = LinearSegmentedColormap.from_list("custom_orange", ["#FFECB3", "#FFA726", "#E65100"])
-    elif color_palette == "purple":
-        cmap = LinearSegmentedColormap.from_list("custom_purple", ["#E1BEE7", "#9C27B0", "#4A148C"])
-    else:
-        cmap = plt.cm.viridis
-    
-    # Compute layout with adjusted parameters for eigenvector centrality
-    if metric_name == "Eigenvector":
-        # Use a different layout algorithm with more space between nodes
-        pos = nx.spring_layout(G_sub, k=0.7, iterations=400, seed=42)  # Increase k for more spacing
-    else:
-        pos = nx.spring_layout(G_sub, k=0.15, iterations=100, seed=42)
-    
-    # Plot dengan tampilan yang lebih bersih
-    plt.figure(figsize=(10, 8), facecolor='white')
-    
-    # Draw edges dengan panah yang lebih jelas dan sedikit transparency untuk eigenvector
-    edge_alpha = 0.2 if metric_name == "Eigenvector" else 0.3
-    nx.draw_networkx_edges(
-        G_sub, pos,
-        alpha=edge_alpha,  
-        width=1.2,
-        edge_color='#666666',
-        arrowsize=15,
-        arrowstyle='-|>',
-        connectionstyle='arc3,rad=0.1'
-    )
-    
-    # Node sizes dan colors berdasarkan centrality
-    node_values = [centrality_metric[n] for n in G_sub.nodes()]
-    vmin, vmax = min(node_values), max(node_values)
-    
-    # For eigenvector, adjust sizes to prevent overlap
-    if metric_name == "Eigenvector":
-        # More differentiated sizes for eigenvector centrality
-        sizes = [1500 * (centrality_metric[n] - vmin) / (vmax - vmin) + 80 for n in G_sub.nodes()]
-    else:
-        sizes = [2000 * (centrality_metric[n] - vmin) / (vmax - vmin) + 100 for n in G_sub.nodes()]
-    
-    # Draw nodes
-    nodes = nx.draw_networkx_nodes(
-        G_sub, pos,
-        node_size=sizes,
-        node_color=node_values,
-        cmap=cmap,
-        alpha=0.85,
-        edgecolors='white',
-        linewidths=0.5
-    )
-    
-    # Tambahkan color bar
-    plt.colorbar(nodes, label=f'{metric_name} Centrality', shrink=0.75)
-    
-    # Draw labels hanya untuk top nodes with adjusted parameters for eigenvector
-    if metric_name == "Eigenvector":
-        # For eigenvector, show fewer labels to reduce cluttering
-        top_labels = sorted(centrality_metric, key=centrality_metric.get, reverse=True)[:10]
-        labels = {n: n for n in G_sub.nodes() if n in top_labels}
-        
-        nx.draw_networkx_labels(
-            G_sub, pos,
-            labels=labels,
-            font_size=9,
-            font_family='sans-serif',
-            font_weight='bold',
-            bbox=dict(facecolor='white', alpha=0.8, edgecolor='none', boxstyle='round,pad=0.4')
-        )
-    else:
-        top_15 = sorted(centrality_metric, key=centrality_metric.get, reverse=True)[:15]
-        labels = {n: n for n in G_sub.nodes() if n in top_15}
-        
-        nx.draw_networkx_labels(
-            G_sub, pos,
-            labels=labels,
-            font_size=10,
-            font_family='sans-serif',
-            font_weight='bold',
-            bbox=dict(facecolor='white', alpha=0.7, edgecolor='none', boxstyle='round,pad=0.3')
-        )
-    
-    plt.title(f'{metric_name} Centrality Network', fontsize=16, fontweight='bold', pad=20)
-    plt.axis('off')
-    plt.tight_layout()
-    
-    return plt
-
-
 # Fungsi untuk menampilkan top nodes berdasarkan centrality
-def display_top_nodes(centrality_dict, metric_name, n=30):
+def display_top_nodes(centrality_dict, metric_name, n=10):
     # Sort nodes berdasarkan centrality value
     sorted_nodes = sorted(centrality_dict.items(), key=lambda x: x[1], reverse=True)
     
@@ -389,17 +294,23 @@ if not db_merge.empty:
         </div>
         """, unsafe_allow_html=True)
         
-        # Visualisasi jaringan untuk degree centrality
+        # Visualisasi menggunakan Gephi dan Top Aktor
         col1, col2 = st.columns([2, 1])
         
         with col1:
-            fig_degree = plot_network(G, centrality_metrics["degree"], "Degree", "blue")
-            st.pyplot(fig_degree)
+            st.markdown("<div class='gephi-viz'>", unsafe_allow_html=True)
+            st.image("images/degree_centrality_gephi.png", caption="Visualisasi Gephi - Degree Centrality Network")
+            st.markdown("""
+            <div style="text-align: center; font-size: 0.8rem; color: #64748B;">
+                Visualisasi jaringan dengan ukuran node proporsional terhadap nilai degree centrality
+            </div>
+            """, unsafe_allow_html=True)
+            st.markdown("</div>", unsafe_allow_html=True)
         
         with col2:
             st.markdown("<div class='data-container'>", unsafe_allow_html=True)
             st.subheader("Top Aktor - Degree Centrality")
-            df_degree = display_top_nodes(centrality_metrics["degree"], "Nilai", 20)
+            df_degree = display_top_nodes(centrality_metrics["degree"], "Nilai", 10)
             st.dataframe(df_degree, hide_index=True)
             
             st.markdown("""
@@ -425,17 +336,23 @@ if not db_merge.empty:
         </div>
         """, unsafe_allow_html=True)
         
-        # Visualisasi jaringan untuk betweenness centrality
+        # Visualisasi menggunakan Gephi dan Top Aktor
         col1, col2 = st.columns([2, 1])
         
         with col1:
-            fig_betweenness = plot_network(G, centrality_metrics["betweenness"], "Betweenness", "orange")
-            st.pyplot(fig_betweenness)
+            st.markdown("<div class='gephi-viz'>", unsafe_allow_html=True)
+            st.image("images/betweeness_centrality_gephi.png", caption="Visualisasi Gephi - Betweenness Centrality Network")
+            st.markdown("""
+            <div style="text-align: center; font-size: 0.8rem; color: #64748B;">
+                Visualisasi jaringan dengan ukuran node proporsional terhadap nilai betweenness centrality
+            </div>
+            """, unsafe_allow_html=True)
+            st.markdown("</div>", unsafe_allow_html=True)
         
         with col2:
             st.markdown("<div class='data-container'>", unsafe_allow_html=True)
             st.subheader("Top Aktor - Betweenness Centrality")
-            df_betweenness = display_top_nodes(centrality_metrics["betweenness"], "Nilai", 20)
+            df_betweenness = display_top_nodes(centrality_metrics["betweenness"], "Nilai", 10)
             st.dataframe(df_betweenness, hide_index=True)
             
             st.markdown("""
@@ -461,17 +378,23 @@ if not db_merge.empty:
         </div>
         """, unsafe_allow_html=True)
         
-        # Visualisasi jaringan untuk closeness centrality
+        # Visualisasi menggunakan Gephi dan Top Aktor
         col1, col2 = st.columns([2, 1])
         
         with col1:
-            fig_closeness = plot_network(G, centrality_metrics["closeness"], "Closeness", "green")
-            st.pyplot(fig_closeness)
+            st.markdown("<div class='gephi-viz'>", unsafe_allow_html=True)
+            st.image("images/closeness_centrality_gephi.png", caption="Visualisasi Gephi - Closeness Centrality Network")
+            st.markdown("""
+            <div style="text-align: center; font-size: 0.8rem; color: #64748B;">
+                Visualisasi jaringan dengan ukuran node proporsional terhadap nilai closeness centrality
+            </div>
+            """, unsafe_allow_html=True)
+            st.markdown("</div>", unsafe_allow_html=True)
         
         with col2:
             st.markdown("<div class='data-container'>", unsafe_allow_html=True)
             st.subheader("Top Aktor - Closeness Centrality")
-            df_closeness = display_top_nodes(centrality_metrics["closeness"], "Nilai", 20)
+            df_closeness = display_top_nodes(centrality_metrics["closeness"], "Nilai", 10)
             st.dataframe(df_closeness, hide_index=True)
             
             st.markdown("""
@@ -496,17 +419,23 @@ if not db_merge.empty:
         </div>
         """, unsafe_allow_html=True)
         
-        # Visualisasi jaringan untuk eigenvector centrality
+        # Visualisasi menggunakan Gephi dan Top Aktor
         col1, col2 = st.columns([2, 1])
         
         with col1:
-            fig_eigenvector = plot_network(G, centrality_metrics["eigenvector"], "Eigenvector", "purple")
-            st.pyplot(fig_eigenvector)
+            st.markdown("<div class='gephi-viz'>", unsafe_allow_html=True)
+            st.image("images/eigenvector_centrality_gephi.png", caption="Visualisasi Gephi - Eigenvector Centrality Network")
+            st.markdown("""
+            <div style="text-align: center; font-size: 0.8rem; color: #64748B;">
+                Visualisasi jaringan dengan ukuran node proporsional terhadap nilai eigenvector centrality
+            </div>
+            """, unsafe_allow_html=True)
+            st.markdown("</div>", unsafe_allow_html=True)
         
         with col2:
             st.markdown("<div class='data-container'>", unsafe_allow_html=True)
             st.subheader("Top Aktor - Eigenvector Centrality")
-            df_eigenvector = display_top_nodes(centrality_metrics["eigenvector"], "Nilai", 20)
+            df_eigenvector = display_top_nodes(centrality_metrics["eigenvector"], "Nilai", 10)
             st.dataframe(df_eigenvector, hide_index=True)
             
             st.markdown("""
@@ -567,9 +496,24 @@ if not db_merge.empty:
     
     3. **Analisis Centrality**: Berbagai metrik centrality (degree, betweenness, closeness, eigenvector) dihitung untuk mengidentifikasi aktor-aktor kunci.
     
-    4. **Visualisasi**: Jaringan divisualisasikan dengan ukuran node proporsional terhadap nilai centrality untuk memudahkan interpretasi.
+    4. **Visualisasi**: Jaringan divisualisasikan menggunakan software Gephi untuk mendapatkan representasi visual yang optimal, dengan ukuran node proporsional terhadap nilai centrality.
     
     5. **Interpretasi**: Hasil analisis diinterpretasikan untuk mengidentifikasi peran dan posisi aktor dalam jaringan serta pola aliran informasi.
+    """)
+    st.markdown("</div>", unsafe_allow_html=True)
+    
+    # Notes tentang penggunaan Gephi
+    st.markdown("<div class='info-box'>", unsafe_allow_html=True)
+    st.markdown("""
+    **Catatan tentang Visualisasi Gephi**:
+    
+    Visualisasi jaringan pada aplikasi ini menggunakan hasil ekspor dari software Gephi, yang memungkinkan:
+    
+    1. Representasi visual yang lebih optimal dan estetis dibandingkan visualisasi yang dihasilkan secara langsung
+    2. Penggunaan algoritma layout yang lebih canggih untuk menampilkan struktur jaringan dengan lebih jelas
+    3. Pengaturan warna dan ukuran node yang lebih presisi berdasarkan nilai centrality
+    
+    Data centrality metrics tetap dihitung secara real-time menggunakan NetworkX untuk memberikan informasi akurat tentang aktor-aktor berpengaruh.
     """)
     st.markdown("</div>", unsafe_allow_html=True)
     
