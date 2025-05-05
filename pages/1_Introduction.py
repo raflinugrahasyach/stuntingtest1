@@ -252,7 +252,7 @@ with tab4:
     with col2:
         st.image("images/Flowchart Analisis Sentimen.drawio.png", 
                 caption="Flowchart Analisis Sentimen", 
-                use_container_width=True)
+                use_container_width=True, width=100)
     
     st.markdown("<hr>", unsafe_allow_html=True)
     
