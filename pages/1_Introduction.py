@@ -52,6 +52,12 @@ st.markdown("""
         margin-top: 30px;
         margin-bottom: 30px;
     }
+    .flowchart-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin: 20px 0;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -238,50 +244,50 @@ with tab4:
     
     st.markdown("<hr>", unsafe_allow_html=True)
     
-    # SATU BARIS UNTUK FLOWCHART ANALISIS SENTIMEN
+    # FLOWCHART SECTION WITH IMPROVED LAYOUT
     st.markdown("<div class='sub-header'>Flowchart Analisis Sentimen</div>", unsafe_allow_html=True)
     
-    # Menggunakan container untuk memastikan ukuran konsisten
-    st.markdown("<div class='flowchart-container'>", unsafe_allow_html=True)
+    # Create a centered container for flowcharts with consistent width
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         st.image("images/Flowchart Analisis Sentimen.drawio.png", 
-                 caption="Flowchart Analisis Sentimen", 
-                 use_container_width=True)
-    st.markdown("</div>", unsafe_allow_html=True)
+                caption="Flowchart Analisis Sentimen", 
+                use_container_width=True)
     
     st.markdown("<hr>", unsafe_allow_html=True)
     
     # TEXT PREPROCESSING & LABELING
     st.markdown("<div class='sub-header'>Flowchart Text Preprocessing & Labeling Data</div>", unsafe_allow_html=True)
     
-    # Menggunakan container untuk memastikan ukuran konsisten
-    st.markdown("<div class='flowchart-container'>", unsafe_allow_html=True)
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         st.image("images/Flowchart Text Preprocessing and Labeling.jpg", 
-                 caption="Text Preprocessing & Labeling Data", 
-                 use_container_width=True)
-    st.markdown("</div>", unsafe_allow_html=True)
+                caption="Text Preprocessing & Labeling Data", 
+                use_container_width=True)
     
     st.markdown("<hr>", unsafe_allow_html=True)
     
     # ANALISIS SENTIMEN & JARINGAN SOSIAL
     st.markdown("<div class='sub-header'>Flowchart Klasifikasi Sentimen & Analisis Jaringan Sosial</div>", unsafe_allow_html=True)
     
+    # Create two columns with equal width for better balance
     col1, col2 = st.columns(2)
     
     with col1:
+        # Add container div for consistent sizing
+        st.markdown('<div style="display: flex; justify-content: center; height: 380px;">', unsafe_allow_html=True)
         st.image("images/Flowchart Klasifikasi Sentimen.drawio.png", 
-                 caption="Flowchart Klasifikasi Sentimen", 
-                 use_container_width=True,
-                 width=600)
+                caption="Flowchart Klasifikasi Sentimen", 
+                use_container_width=True)
+        st.markdown('</div>', unsafe_allow_html=True)
     
     with col2:
+        # Add container div for consistent sizing
+        st.markdown('<div style="display: flex; justify-content: center; height: 380px;">', unsafe_allow_html=True)
         st.image("images/Flowchart Analisis Jaringan Sosial.drawio.png", 
-                 caption="Flowchart Analisis Jaringan Sosial", 
-                 use_container_width=True,
-                 width=600)
+                caption="Flowchart Analisis Jaringan Sosial", 
+                use_container_width=True)
+        st.markdown('</div>', unsafe_allow_html=True)
     
 with tab5:
     st.markdown("<div class='section-header'>Data Sampel</div>", unsafe_allow_html=True)
