@@ -67,7 +67,7 @@ st.markdown("""
 
 # Tampilkan konten dalam tabs
 tab1, tab2, tab3, tab4, tab5 = st.tabs([
-    "Latar Belakang & Tujuan", 
+    "Latar Belakang, Rumusan Masalah & Tujuan", 
     "Manfaat Penelitian", 
     "Batasan & Penelitian Terdahulu", 
     "Metodologi", 
@@ -118,19 +118,35 @@ with tab1:
     
     st.markdown("<hr>", unsafe_allow_html=True)
     
+    # RUMUSAN MASALAH
+    st.markdown("<div class='section-header'>Rumusan Masalah</div>", unsafe_allow_html=True)
+    
+    st.markdown("""
+    <div class='content-text'>
+    <ol>
+        <li>Bagaimana hasil sentimen publik terhadap program stunting 2024 di media sosial X menggunakan VADER Lexicon dan BERT?</li>
+        <br>
+        <li>Bagaimana perbandingan tingkat akurasi algoritma machine learning GBT, SVM, dan XGBoost dalam mengklasifikasikan sentimen publik terhadap program stunting?</li>
+        <br>
+        <li>Bagaimana posisi dan peran aktor dalam jaringan sosial yang terbentuk dari percakapan mengenai program stunting di media sosial X?</li>
+        <br>
+    </ol>
+    </div>
+    """, unsafe_allow_html=True)
+
+
     # TUJUAN PENELITIAN
     st.markdown("<div class='section-header'>Tujuan Penelitian</div>", unsafe_allow_html=True)
     
     st.markdown("""
     <div class='content-text'>
     <ol>
-        <li>Mengidentifikasi dan mengklasifikasikan sentimen publik terhadap program stunting tahun 2024 di media sosial Twitter menggunakan VADER Lexicon dan BERT.</li>
+        <li>Mengidentifikasi dan mengklasifikasikan sentimen publik terhadap program stunting tahun 2024 di media sosial X menggunakan VADER Lexicon dan BERT.</li>
         <br>
-        <li>Membandingkan algoritma machine learning seperti Gradient-Boosted Tree (GBT), Support Vector Machine (SVM), dan Extreme Gradient Boosting (XGBoost) untuk menentukan model dengan akurasi tertinggi dalam klasifikasi sentimen publik terkait program stunting.</li>
+        <li>Membandingkan performa algoritma machine learning GBT, SVM, dan XGBoost untuk menentukan model dengan akurasi terbaik dalam klasifikasi sentimen publik terkait program stunting.</li>
         <br>
-        <li>Menganalisis kata-kata yang paling sering muncul di kalangan pengguna media sosial Twitter terkait program stunting di Indonesia.</li>
+        <li>Menganalisis posisi dan peran aktor dalam jaringan sosial yang terbentuk dari percakapan terkait program stunting di media sosial X, berdasarkan analisis jaringan sosial (SNA).</li>
         <br>
-        <li>Menentukan aktor-aktor kunci yang berperan penting dalam jaringan sosial yang terbentuk dari percakapan terkait program stunting di Twitter melalui analisis jaringan sosial (SNA).</li>
     </ol>
     </div>
     """, unsafe_allow_html=True)
@@ -141,13 +157,13 @@ with tab2:
     st.markdown("""
     <div class='content-text'>
     <ol>
-        <li>Memberikan wawasan tentang persepsi/sentimen publik.</li>
+        <li>Memberikan wawasan tentang persepsi/sentimen publik terhadap program penanggulangan stunting di Indonesia, yang dapat digunakan untuk evaluasi dan perbaikan kebijakan.</li>
         <br>
-        <li>Mengidentifikasi aktor kunci dalam pembentukan opini publik.</li>
+        <li>Mengidentifikasi aktor kunci dalam pembentukan opini publik, dengan menggunakan Social Network Analysis untuk memetakan pengaruh dalam diskusi mengenai program stunting.</li>
         <br>
-        <li>Memberikan masukan kepada pemerintah.</li>
+        <li>Memberikan masukan kepada pemerintah terkait strategi optimalisasi program penanggulangan stunting yang lebih responsif terhadap kebutuhan masyarakat.</li>
         <br>
-        <li>Memberikan kontribusi pada pengembangan ilmu data.</li>
+        <li>Memberikan kontribusi pada pengembangan ilmu data, khususnya dalam analisis sentimen dan jaringan sosial, serta membuka peluang untuk penelitian lebih lanjut di bidang komunikasi digital dan kesehatan masyarakat.</li>
     </ol>
     </div>
     """, unsafe_allow_html=True)
@@ -218,7 +234,8 @@ with tab4:
     with col2:
         st.image("images/Flowchart Metodologi Penelitian.drawio.png", 
                  caption="Flowchart Metodologi Penelitian", 
-                 use_container_width=True)
+                 use_container_width=True,
+                 width=600)
     
     # FLOWCHART ANALISIS SENTIMEN
     st.markdown("<div class='sub-header'>Flowchart Analisis Sentimen</div>", unsafe_allow_html=True)
@@ -227,7 +244,8 @@ with tab4:
     with col2:
         st.image("images/Flowchart Analisis Sentimen.drawio.png", 
                  caption="Flowchart Analisis Sentimen", 
-                 use_container_width=True)
+                 use_container_width=True,
+                 width=600)
     
     # TEXT PREPROCESSING & LABELING
     st.markdown("<div class='sub-header'>Flowchart Text Preprocessing & Labeling Data</div>", unsafe_allow_html=True)
@@ -236,7 +254,8 @@ with tab4:
     with col2:
         st.image("images/Flowchart Text Preprocessing and Labeling.jpg", 
                  caption="Text Preprocessing & Labeling Data", 
-                 use_container_width=True)
+                 use_container_width=True,
+                 width=600)
     
     # ANALISIS SENTIMEN & JARINGAN SOSIAL
     st.markdown("<div class='sub-header'>Flowchart Klasifikasi Sentimen & Analisis Jaringan Sosial</div>", unsafe_allow_html=True)
@@ -246,12 +265,14 @@ with tab4:
     with col1:
         st.image("images/Flowchart Klasifikasi Sentimen.drawio.png", 
                  caption="Flowchart Klasifikasi Sentimen", 
-                 use_container_width=True)
+                 use_container_width=True,
+                 width=600)
     
     with col2:
         st.image("images/Flowchart Analisis Jaringan Sosial.drawio.png", 
                  caption="Flowchart Analisis Jaringan Sosial", 
-                 use_container_width=True)
+                 use_container_width=True,
+                 width=600)
     
 with tab5:
     st.markdown("<div class='section-header'>Data Sampel</div>", unsafe_allow_html=True)

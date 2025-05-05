@@ -95,209 +95,285 @@ class_support = {
 # Sidebar untuk kontrol
 st.sidebar.header("Konfigurasi Tampilan")
 
-# Mengatur tampilan sidebar
-metric = st.sidebar.selectbox(
-    "Pilih Metrik Evaluasi:", 
-    ["Accuracy", "Precision", "Recall", "F1 Score", "Confusion Matrix"]
-)
+# Mengatur tampilan sidebar untuk confusion matrix
+show_confusion_matrix = st.sidebar.checkbox("Tampilkan Confusion Matrix", False)
+
+if show_confusion_matrix:
+    selected_algorithm = st.sidebar.selectbox(
+        "Pilih Algoritma untuk Confusion Matrix:", 
+        ["GBDT", "SVC", "XGBoost"]
+    )
 
 model_type = st.sidebar.radio(
     "Pilih Model Sentimen:",
     ["BERT", "VADER Lexicon", "Keduanya"]
 )
 
-# Memilih algoritma untuk confusion matrix jika dipilih
-if metric == "Confusion Matrix":
-    selected_algorithm = st.sidebar.selectbox(
-        "Pilih Algoritma:", 
-        ["GBDT", "SVC", "XGBoost"]
-    )
-    
 # Tab untuk menampilkan berbagai aspek analisis
 tab1, tab2, tab3 = st.tabs(["📊 Perbandingan Metrik", "🔍 Detail Algoritma", "📝 Interpretasi"])
 
 with tab1:
     st.header("Perbandingan Metrik Evaluasi")
     
-    if metric != "Confusion Matrix":
-        # Tampilkan perbandingan metrik dalam bentuk grafik bar
-        fig = go.Figure()
-        
-        if model_type in ["BERT", "Keduanya"]:
-            if metric == "Accuracy":
-                fig.add_trace(go.Bar(
-                    x=models,
-                    y=bert_accuracies,
-                    name='BERT',
-                    marker_color='indianred',
-                    text=[f"{acc:.5f}" for acc in bert_accuracies],
-                    textposition='auto',
-                ))
-            elif metric == "Precision":
-                bert_macro_precisions = [bert_precisions[model]['macro'] for model in models]
-                fig.add_trace(go.Bar(
-                    x=models,
-                    y=bert_macro_precisions,
-                    name='BERT',
-                    marker_color='indianred',
-                    text=[f"{prec:.5f}" for prec in bert_macro_precisions],
-                    textposition='auto',
-                ))
-            elif metric == "Recall":
-                bert_macro_recalls = [bert_recalls[model]['macro'] for model in models]
-                fig.add_trace(go.Bar(
-                    x=models,
-                    y=bert_macro_recalls,
-                    name='BERT',
-                    marker_color='indianred',
-                    text=[f"{rec:.5f}" for rec in bert_macro_recalls],
-                    textposition='auto',
-                ))
-            elif metric == "F1 Score":
-                bert_macro_f1s = [bert_f1_scores[model]['macro'] for model in models]
-                fig.add_trace(go.Bar(
-                    x=models,
-                    y=bert_macro_f1s,
-                    name='BERT',
-                    marker_color='indianred',
-                    text=[f"{f1:.5f}" for f1 in bert_macro_f1s],
-                    textposition='auto',
-                ))
-        
-        if model_type in ["VADER Lexicon", "Keduanya"]:
-            if metric == "Accuracy":
-                fig.add_trace(go.Bar(
-                    x=models,
-                    y=vader_accuracies,
-                    name='VADER Lexicon',
-                    marker_color='royalblue',
-                    text=[f"{acc:.5f}" for acc in vader_accuracies],
-                    textposition='auto',
-                ))
-            elif metric == "Precision":
-                vader_macro_precisions = [vader_precisions[model]['macro'] for model in models]
-                fig.add_trace(go.Bar(
-                    x=models,
-                    y=vader_macro_precisions,
-                    name='VADER Lexicon',
-                    marker_color='royalblue',
-                    text=[f"{prec:.5f}" for prec in vader_macro_precisions],
-                    textposition='auto',
-                ))
-            elif metric == "Recall":
-                vader_macro_recalls = [vader_recalls[model]['macro'] for model in models]
-                fig.add_trace(go.Bar(
-                    x=models,
-                    y=vader_macro_recalls,
-                    name='VADER Lexicon',
-                    marker_color='royalblue',
-                    text=[f"{rec:.5f}" for rec in vader_macro_recalls],
-                    textposition='auto',
-                ))
-            elif metric == "F1 Score":
-                vader_macro_f1s = [vader_f1_scores[model]['macro'] for model in models]
-                fig.add_trace(go.Bar(
-                    x=models,
-                    y=vader_macro_f1s,
-                    name='VADER Lexicon',
-                    marker_color='royalblue',
-                    text=[f"{f1:.5f}" for f1 in vader_macro_f1s],
-                    textposition='auto',
-                ))
-                
-        fig.update_layout(
-            title=f"Perbandingan {metric} Model Klasifikasi Sentimen",
-            xaxis_title="Algoritma",
-            yaxis_title=f"{metric}",
-            yaxis=dict(range=[0, 1]),
-            barmode='group',
-            legend_title="Model Sentimen",
-            height=500
-        )
-        st.plotly_chart(fig, use_container_width=True)
-        
-        # Detailed metrics table
-        if metric != "Accuracy":
-            st.subheader(f"Detail {metric} per Kelas")
+    if not show_confusion_matrix:
+        # Tampilkan keempat metrik secara bersamaan dalam subplot
+        if model_type == "Keduanya":
+            # Buat subplot 2x2 untuk keempat metrik
+            fig = make_subplots(
+                rows=2, cols=2,
+                subplot_titles=("Accuracy", "Precision (Macro)", "Recall (Macro)", "F1 Score (Macro)"),
+                vertical_spacing=0.15,
+                horizontal_spacing=0.08
+            )
+            
+            # Accuracy subplot (baris 1, kolom 1)
+            fig.add_trace(go.Bar(
+                x=models,
+                y=bert_accuracies,
+                name='BERT',
+                marker_color='indianred',
+                text=[f"{acc:.2f}" for acc in bert_accuracies],
+                textposition='auto',
+                showlegend=True
+            ), row=1, col=1)
+            
+            fig.add_trace(go.Bar(
+                x=models,
+                y=vader_accuracies,
+                name='VADER Lexicon',
+                marker_color='royalblue',
+                text=[f"{acc:.2f}" for acc in vader_accuracies],
+                textposition='auto',
+                showlegend=True
+            ), row=1, col=1)
+            
+            # Precision subplot (baris 1, kolom 2)
+            bert_macro_precisions = [bert_precisions[model]['macro'] for model in models]
+            vader_macro_precisions = [vader_precisions[model]['macro'] for model in models]
+            
+            fig.add_trace(go.Bar(
+                x=models,
+                y=bert_macro_precisions,
+                name='BERT',
+                marker_color='indianred',
+                text=[f"{prec:.2f}" for prec in bert_macro_precisions],
+                textposition='auto',
+                showlegend=False
+            ), row=1, col=2)
+            
+            fig.add_trace(go.Bar(
+                x=models,
+                y=vader_macro_precisions,
+                name='VADER Lexicon',
+                marker_color='royalblue',
+                text=[f"{prec:.2f}" for prec in vader_macro_precisions],
+                textposition='auto',
+                showlegend=False
+            ), row=1, col=2)
+            
+            # Recall subplot (baris 2, kolom 1)
+            bert_macro_recalls = [bert_recalls[model]['macro'] for model in models]
+            vader_macro_recalls = [vader_recalls[model]['macro'] for model in models]
+            
+            fig.add_trace(go.Bar(
+                x=models,
+                y=bert_macro_recalls,
+                name='BERT',
+                marker_color='indianred',
+                text=[f"{rec:.2f}" for rec in bert_macro_recalls],
+                textposition='auto',
+                showlegend=False
+            ), row=2, col=1)
+            
+            fig.add_trace(go.Bar(
+                x=models,
+                y=vader_macro_recalls,
+                name='VADER Lexicon',
+                marker_color='royalblue',
+                text=[f"{rec:.2f}" for rec in vader_macro_recalls],
+                textposition='auto',
+                showlegend=False
+            ), row=2, col=1)
+            
+            # F1 Score subplot (baris 2, kolom 2)
+            bert_macro_f1s = [bert_f1_scores[model]['macro'] for model in models]
+            vader_macro_f1s = [vader_f1_scores[model]['macro'] for model in models]
+            
+            fig.add_trace(go.Bar(
+                x=models,
+                y=bert_macro_f1s,
+                name='BERT',
+                marker_color='indianred',
+                text=[f"{f1:.2f}" for f1 in bert_macro_f1s],
+                textposition='auto',
+                showlegend=False
+            ), row=2, col=2)
+            
+            fig.add_trace(go.Bar(
+                x=models,
+                y=vader_macro_f1s,
+                name='VADER Lexicon',
+                marker_color='royalblue',
+                text=[f"{f1:.2f}" for f1 in vader_macro_f1s],
+                textposition='auto',
+                showlegend=False
+            ), row=2, col=2)
+            
+        else:  # BERT atau VADER
+            fig = make_subplots(
+                rows=2, cols=2,
+                subplot_titles=("Accuracy", "Precision (Macro)", "Recall (Macro)", "F1 Score (Macro)"),
+                vertical_spacing=0.15,
+                horizontal_spacing=0.08
+            )
             
             if model_type == "BERT":
-                if metric == "Precision":
-                    detail_data = {model: {k: v for k, v in bert_precisions[model].items() if k in ['0', '1', '2']} for model in models}
-                elif metric == "Recall":
-                    detail_data = {model: {k: v for k, v in bert_recalls[model].items() if k in ['0', '1', '2']} for model in models}
-                else:  # F1 Score
-                    detail_data = {model: {k: v for k, v in bert_f1_scores[model].items() if k in ['0', '1', '2']} for model in models}
-                
-                df = pd.DataFrame({
-                    "Algoritma": models,
-                    "Negatif (0)": [detail_data[model]['0'] for model in models],
-                    "Netral (1)": [detail_data[model]['1'] for model in models],
-                    "Positif (2)": [detail_data[model]['2'] for model in models],
-                    "Macro Avg": [detail_data[model]['macro'] for model in models],
-                    "Support": [f"{class_support['BERT']['0']}, {class_support['BERT']['1']}, {class_support['BERT']['2']}"] * len(models)
-                })
-                
-                st.dataframe(df, use_container_width=True)
-                
-            elif model_type == "VADER Lexicon":
-                if metric == "Precision":
-                    detail_data = {model: {k: v for k, v in vader_precisions[model].items() if k in ['0', '1', '2']} for model in models}
-                elif metric == "Recall":
-                    detail_data = {model: {k: v for k, v in vader_recalls[model].items() if k in ['0', '1', '2']} for model in models}
-                else:  # F1 Score
-                    detail_data = {model: {k: v for k, v in vader_f1_scores[model].items() if k in ['0', '1', '2']} for model in models}
-                
-                df = pd.DataFrame({
-                    "Algoritma": models,
-                    "Negatif (0)": [detail_data[model]['0'] for model in models],
-                    "Netral (1)": [detail_data[model]['1'] for model in models],
-                    "Positif (2)": [detail_data[model]['2'] for model in models],
-                    "Macro Avg": [detail_data[model]['macro'] for model in models],
-                    "Support": [f"{class_support['VADER']['0']}, {class_support['VADER']['1']}, {class_support['VADER']['2']}"] * len(models)
-                })
-                
-                st.dataframe(df, use_container_width=True)
-                
-            else:  # Keduanya
-                st.write("**BERT**")
-                if metric == "Precision":
-                    detail_data = {model: {k: v for k, v in bert_precisions[model].items() if k in ['0', '1', '2']} for model in models}
-                elif metric == "Recall":
-                    detail_data = {model: {k: v for k, v in bert_recalls[model].items() if k in ['0', '1', '2']} for model in models}
-                else:  # F1 Score
-                    detail_data = {model: {k: v for k, v in bert_f1_scores[model].items() if k in ['0', '1', '2']} for model in models}
-                
-                df_bert = pd.DataFrame({
-                    "Algoritma": models,
-                    "Negatif (0)": [detail_data[model]['0'] for model in models],
-                    "Netral (1)": [detail_data[model]['1'] for model in models],
-                    "Positif (2)": [detail_data[model]['2'] for model in models],
-                    "Macro Avg": [detail_data[model]['macro'] for model in models],
-                    "Support": [f"{class_support['BERT']['0']}, {class_support['BERT']['1']}, {class_support['BERT']['2']}"] * len(models)
-                })
-                
-                st.dataframe(df_bert, use_container_width=True)
-                
-                st.write("**VADER Lexicon**")
-                if metric == "Precision":
-                    detail_data = {model: {k: v for k, v in vader_precisions[model].items() if k in ['0', '1', '2']} for model in models}
-                elif metric == "Recall":
-                    detail_data = {model: {k: v for k, v in vader_recalls[model].items() if k in ['0', '1', '2']} for model in models}
-                else:  # F1 Score
-                    detail_data = {model: {k: v for k, v in vader_f1_scores[model].items() if k in ['0', '1', '2']} for model in models}
-                
-                df_vader = pd.DataFrame({
-                    "Algoritma": models,
-                    "Negatif (0)": [detail_data[model]['0'] for model in models],
-                    "Netral (1)": [detail_data[model]['1'] for model in models],
-                    "Positif (2)": [detail_data[model]['2'] for model in models],
-                    "Macro Avg": [detail_data[model]['macro'] for model in models],
-                    "Support": [f"{class_support['VADER']['0']}, {class_support['VADER']['1']}, {class_support['VADER']['2']}"] * len(models)
-                })
-                
-                st.dataframe(df_vader, use_container_width=True)
+                color = 'indianred'
+                accuracies = bert_accuracies
+                macro_precisions = [bert_precisions[model]['macro'] for model in models]
+                macro_recalls = [bert_recalls[model]['macro'] for model in models]
+                macro_f1s = [bert_f1_scores[model]['macro'] for model in models]
+            else:  # VADER
+                color = 'royalblue'
+                accuracies = vader_accuracies
+                macro_precisions = [vader_precisions[model]['macro'] for model in models]
+                macro_recalls = [vader_recalls[model]['macro'] for model in models]
+                macro_f1s = [vader_f1_scores[model]['macro'] for model in models]
+            
+            # Accuracy
+            fig.add_trace(go.Bar(
+                x=models,
+                y=accuracies,
+                name=model_type,
+                marker_color=color,
+                text=[f"{acc:.2f}" for acc in accuracies],
+                textposition='auto'
+            ), row=1, col=1)
+            
+            # Precision
+            fig.add_trace(go.Bar(
+                x=models,
+                y=macro_precisions,
+                name=model_type,
+                marker_color=color,
+                text=[f"{prec:.2f}" for prec in macro_precisions],
+                textposition='auto',
+                showlegend=False
+            ), row=1, col=2)
+            
+            # Recall
+            fig.add_trace(go.Bar(
+                x=models,
+                y=macro_recalls,
+                name=model_type,
+                marker_color=color,
+                text=[f"{rec:.2f}" for rec in macro_recalls],
+                textposition='auto',
+                showlegend=False
+            ), row=2, col=1)
+            
+            # F1 Score
+            fig.add_trace(go.Bar(
+                x=models,
+                y=macro_f1s,
+                name=model_type,
+                marker_color=color,
+                text=[f"{f1:.2f}" for f1 in macro_f1s],
+                textposition='auto',
+                showlegend=False
+            ), row=2, col=2)
         
-    else:  # Confusion Matrix
+        # Update layout for all subplots
+        fig.update_layout(
+            title="Perbandingan Metrik Evaluasi Model Klasifikasi Sentimen",
+            barmode='group',
+            legend_title="Model Sentimen",
+            height=700
+        )
+        
+        # Set y-axis range untuk semua subplot
+        for i in range(1, 3):
+            for j in range(1, 3):
+                fig.update_yaxes(range=[0, 1], row=i, col=j)
+        
+        # Tampilkan plot
+        st.plotly_chart(fig, use_container_width=True)
+        
+        # Menampilkan tabel metrik detail
+        st.subheader("Detail Metrik per Kelas")
+        
+        if model_type == "BERT":
+            # Buat DataFrame untuk metrik BERT detail
+            bert_detail = pd.DataFrame({
+                "Algoritma": models,
+                "Accuracy": bert_accuracies,
+                "Precision (Neg/0)": [bert_precisions[model]['0'] for model in models],
+                "Precision (Neu/1)": [bert_precisions[model]['1'] for model in models],
+                "Precision (Pos/2)": [bert_precisions[model]['2'] for model in models],
+                "Recall (Neg/0)": [bert_recalls[model]['0'] for model in models],
+                "Recall (Neu/1)": [bert_recalls[model]['1'] for model in models],
+                "Recall (Pos/2)": [bert_recalls[model]['2'] for model in models],
+                "F1 (Neg/0)": [bert_f1_scores[model]['0'] for model in models],
+                "F1 (Neu/1)": [bert_f1_scores[model]['1'] for model in models],
+                "F1 (Pos/2)": [bert_f1_scores[model]['2'] for model in models],
+            })
+            
+            st.dataframe(bert_detail, use_container_width=True)
+            
+        elif model_type == "VADER Lexicon":
+            # Buat DataFrame untuk metrik VADER detail
+            vader_detail = pd.DataFrame({
+                "Algoritma": models,
+                "Accuracy": vader_accuracies,
+                "Precision (Neg/0)": [vader_precisions[model]['0'] for model in models],
+                "Precision (Neu/1)": [vader_precisions[model]['1'] for model in models],
+                "Precision (Pos/2)": [vader_precisions[model]['2'] for model in models],
+                "Recall (Neg/0)": [vader_recalls[model]['0'] for model in models],
+                "Recall (Neu/1)": [vader_recalls[model]['1'] for model in models],
+                "Recall (Pos/2)": [vader_recalls[model]['2'] for model in models],
+                "F1 (Neg/0)": [vader_f1_scores[model]['0'] for model in models],
+                "F1 (Neu/1)": [vader_f1_scores[model]['1'] for model in models],
+                "F1 (Pos/2)": [vader_f1_scores[model]['2'] for model in models],
+            })
+            
+            st.dataframe(vader_detail, use_container_width=True)
+            
+        else:  # Keduanya
+            st.write("**BERT**")
+            bert_detail = pd.DataFrame({
+                "Algoritma": models,
+                "Accuracy": bert_accuracies,
+                "Precision (Neg/0)": [bert_precisions[model]['0'] for model in models],
+                "Precision (Neu/1)": [bert_precisions[model]['1'] for model in models],
+                "Precision (Pos/2)": [bert_precisions[model]['2'] for model in models],
+                "Recall (Neg/0)": [bert_recalls[model]['0'] for model in models],
+                "Recall (Neu/1)": [bert_recalls[model]['1'] for model in models],
+                "Recall (Pos/2)": [bert_recalls[model]['2'] for model in models],
+                "F1 (Neg/0)": [bert_f1_scores[model]['0'] for model in models],
+                "F1 (Neu/1)": [bert_f1_scores[model]['1'] for model in models],
+                "F1 (Pos/2)": [bert_f1_scores[model]['2'] for model in models],
+            })
+            
+            st.dataframe(bert_detail, use_container_width=True)
+            
+            st.write("**VADER Lexicon**")
+            vader_detail = pd.DataFrame({
+                "Algoritma": models,
+                "Accuracy": vader_accuracies,
+                "Precision (Neg/0)": [vader_precisions[model]['0'] for model in models],
+                "Precision (Neu/1)": [vader_precisions[model]['1'] for model in models],
+                "Precision (Pos/2)": [vader_precisions[model]['2'] for model in models],
+                "Recall (Neg/0)": [vader_recalls[model]['0'] for model in models],
+                "Recall (Neu/1)": [vader_recalls[model]['1'] for model in models],
+                "Recall (Pos/2)": [vader_recalls[model]['2'] for model in models],
+                "F1 (Neg/0)": [vader_f1_scores[model]['0'] for model in models],
+                "F1 (Neu/1)": [vader_f1_scores[model]['1'] for model in models],
+                "F1 (Pos/2)": [vader_f1_scores[model]['2'] for model in models],
+            })
+            
+            st.dataframe(vader_detail, use_container_width=True)
+    
+    else:  # Tampilkan Confusion Matrix
         st.subheader(f"Confusion Matrix - {selected_algorithm}")
         
         # 2 kolom untuk menampilkan confusion matrix BERT dan VADER
