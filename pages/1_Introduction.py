@@ -245,7 +245,7 @@ with tab4:
     st.markdown("<div class='flowchart-container'>", unsafe_allow_html=True)
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        st.image("images/Flowchart Analisis Sentimen1.drawio.png", 
+        st.image("images/Flowchart Analisis Sentimen.drawio.png", 
                  caption="Flowchart Analisis Sentimen", 
                  use_container_width=True)
     st.markdown("</div>", unsafe_allow_html=True)
