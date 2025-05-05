@@ -234,28 +234,37 @@ with tab4:
     with col2:
         st.image("images/Flowchart Metodologi Penelitian.drawio.png", 
                  caption="Flowchart Metodologi Penelitian", 
-                 use_container_width=True,
-                 width=600)
+                 use_container_width=True)
     
-    # FLOWCHART ANALISIS SENTIMEN
+    st.markdown("<hr>", unsafe_allow_html=True)
+    
+    # SATU BARIS UNTUK FLOWCHART ANALISIS SENTIMEN
     st.markdown("<div class='sub-header'>Flowchart Analisis Sentimen</div>", unsafe_allow_html=True)
     
-    col1, col2, col3 = st.columns([1, 3, 1])
+    # Menggunakan container untuk memastikan ukuran konsisten
+    st.markdown("<div class='flowchart-container'>", unsafe_allow_html=True)
+    col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         st.image("images/Flowchart Analisis Sentimen.drawio.png", 
                  caption="Flowchart Analisis Sentimen", 
-                 use_container_width=True,
-                 width=600)
+                 use_container_width=True)
+    st.markdown("</div>", unsafe_allow_html=True)
+    
+    st.markdown("<hr>", unsafe_allow_html=True)
     
     # TEXT PREPROCESSING & LABELING
     st.markdown("<div class='sub-header'>Flowchart Text Preprocessing & Labeling Data</div>", unsafe_allow_html=True)
     
-    col1, col2, col3 = st.columns([1, 3, 1])
+    # Menggunakan container untuk memastikan ukuran konsisten
+    st.markdown("<div class='flowchart-container'>", unsafe_allow_html=True)
+    col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         st.image("images/Flowchart Text Preprocessing and Labeling.jpg", 
                  caption="Text Preprocessing & Labeling Data", 
-                 use_container_width=True,
-                 width=600)
+                 use_container_width=True)
+    st.markdown("</div>", unsafe_allow_html=True)
+    
+    st.markdown("<hr>", unsafe_allow_html=True)
     
     # ANALISIS SENTIMEN & JARINGAN SOSIAL
     st.markdown("<div class='sub-header'>Flowchart Klasifikasi Sentimen & Analisis Jaringan Sosial</div>", unsafe_allow_html=True)
