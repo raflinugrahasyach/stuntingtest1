@@ -234,7 +234,7 @@ with tab4:
     with col2:
         st.image("images/Flowchart Metodologi Penelitian.drawio.png", 
                  caption="Flowchart Metodologi Penelitian", 
-                 use_container_width=True)
+                 use_container_width=True, width=500, height=300)
     
     st.markdown("<hr>", unsafe_allow_html=True)
     
